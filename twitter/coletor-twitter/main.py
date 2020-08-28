@@ -32,18 +32,20 @@ else:
         error_Json = { 'error': [] }
         joining_timestamps = []
 
+
         for kind in [ 'users', 'keywords' ]:
             timestamp = None
 
             try:
                 tt = api.shell(Json, kind)
-                timestamp = tt.start(verbose=True)
-                joining_timestamps.append(int(timestamp))
+                timestamp = tt.start(verbose=False)
+                if int(timestamp):
+                    joining_timestamps.append(int(timestamp))
             except Exception as e:
                 this_message = 'error getting tweets: ' + str(e)
                 if this_message not in error_Json['error']:
                     error_Json['error'].append(this_message)
-                continue
+
 
         if error_Json['error']:
             error_Json['error'] = ' ; '.join(error_Json['error'])

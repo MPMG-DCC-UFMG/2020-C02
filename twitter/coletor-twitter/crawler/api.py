@@ -202,21 +202,23 @@ def dumps(sts):
     try:
         medias = list()
         for image in sts.extended_entities['media']:
-            if image['type'] == 'photo':
+            if image['type'] == 'photo' or image['type'] == 'gif':
                 url = image['media_url_https']
 
-            elif image['type'] == 'video':
+            elif image['type'] == 'video' or image['type'] == 'animated_gif':
                 bit = lambda x: x['bitrate'] if 'bitrate' in x else 0
                 url = max(image['video_info']['variants'], key=bit)['url']
             
             medias.append((image['type'], url))
         status['medias'] = medias
-    except Exception:
+    except Exception as e:
         status['medias'] = []
 
     # if str(status['id']) == '':
-        # print('>>>>>> medias ==' + str(status['medias']))
         # exit(0)
+        # checklist = []
+        # try: # checklist = sts.extended_entities['media']
+        # print('>>>>>> medias ==' + str(status['medias']))
 
     return json.dumps(status, ensure_ascii=False)
 
@@ -454,17 +456,22 @@ class shell:
         if verbose:
             print(date_str() + " Início da coleta")
 
-        self.__folders()
 
-        if self.type == 'keywords':
+        if self.type == 'keywords' and self.words:
+            self.__folders()
             self.__keywords(verbose)
-        elif self.type == 'users':
+
+            return self.timestamp
+        elif self.type == 'users' and self.users:
+            self.__folders()
             self.__profile_data()
             self.__follow('followers', verbose)
             self.__follow('following', verbose)
             self.__users(verbose) 
 
-        return self.timestamp
+            return self.timestamp
+
+        return 0
 
 
     def __folders(self):
