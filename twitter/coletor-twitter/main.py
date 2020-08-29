@@ -7,6 +7,9 @@ import time
 from sys import argv
 
 
+error_key = 'erro'
+
+
 target_json_folder = '/var/twitter-crawler/jsons/'
 if not os.path.isdir(target_json_folder):
     os.mkdir(target_json_folder)
@@ -14,7 +17,7 @@ target_json_filename = target_json_folder + str(int(time.time()*1000)) + '.json'
 target_json = None
     
 if not (len(argv) == 2 or (len(argv) == 3 and '-d' in argv)):
-    target_json = json.dumps({ 'error': 'Usage: "python3 main.py <input-json>" or "python3 main.py -d <input-json-dump>"' })
+    target_json = json.dumps({ error_key: 'Usage: "python3 main.py <input-json>" or "python3 main.py -d <input-json-dump>"' })
 else:
     try:
         Json = json.dumps(json.loads(argv[argv.index('-d')+1]))
@@ -23,13 +26,19 @@ else:
             with open(target_json_folder + '../' + argv[1].split('/')[-1], 'rt') as f:
                 Json = json.dumps(json.load(f))
         except:
-            target_json = json.dumps({ 'error': 'Usage: "python3 main.py <input-json>" or "python3 main.py -d <input-json-dump>"' })
+            target_json = json.dumps({ error_key: 'Usage: "python3 main.py <input-json>" or "python3 main.py -d <input-json-dump>"' })
 
+    # joining_timestamps = [ '1598620735908' ]
+    # target_json = json.dumps(api.shell(Json, 'users').joined_timestamps(joining_timestamps))
+    # print(json.loads(target_json))
 
-    if 'error' in json.loads(Json):
+    if error_key in json.loads(Json):
         target_json = copy.deepcopy(Json)
     else:
-        error_Json = { 'error': [] }
+        if 'usuarios' in Json or 'palavras' in Json:
+            Json = json.dumps(api.translate_json_keys(json.loads(Json), 'pt', 'en', recursively=True))
+
+        error_Json = { error_key: [] }
         joining_timestamps = []
 
 
@@ -43,12 +52,12 @@ else:
                     joining_timestamps.append(int(timestamp))
             except Exception as e:
                 this_message = 'error getting tweets: ' + str(e)
-                if this_message not in error_Json['error']:
-                    error_Json['error'].append(this_message)
+                if this_message not in error_Json[error_key]:
+                    error_Json[error_key].append(this_message)
 
 
-        if error_Json['error']:
-            error_Json['error'] = ' ; '.join(error_Json['error'])
+        if error_Json[error_key]:
+            error_Json[error_key] = ' ; '.join(error_Json[error_key])
             target_json = json.dumps(error_Json)
         else:
             target_json = json.dumps(api.shell(Json, 'users').joined_timestamps(joining_timestamps))

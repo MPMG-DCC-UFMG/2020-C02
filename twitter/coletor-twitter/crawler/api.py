@@ -11,6 +11,124 @@ from datetime import datetime
 from dateutil import parser
 
 
+def translate_json_keys(jason, source, target, recursively=False):
+    """
+    Função que recebe um objeto json
+    e traduz suas chaves para portugues
+    """
+
+    translated = {}
+    if recursively:
+        translated = translate_node(jason, source, target)
+    elif type(jason) == dict:
+        for k in jason:
+            translated[translate_word(k, source, target)] = jason[k]
+    else:
+        translated = jason
+
+    return translated
+
+
+def translate_word(word, source, target):
+    translation = {
+        'pt': { 'en': {} },
+        'en': {
+            'pt': {
+                'access token': 'token_acesso',
+                'access token secret': 'segredo_token_acesso',
+                'consumer key': 'chave_consumidor',
+                'consumer secret': 'segredo_consumidor',
+                'crawler': 'coletor',
+                'created_at': 'criado_em',
+                'description': 'descricao',
+                'error': 'erro',
+                'favorite_count': 'quant_curtidas',
+                'favourites_count': 'quant_curtidas',
+                'following': 'seguindo',
+                'followers': 'seguidores',
+                'followers_count': 'quant_seguidores',
+                'followers_limit': 'limite_de_seguidores',
+                'friends': 'seguindo',
+                'friends_count': 'quant_seguindo',
+                'get_follow_profiles': 'recuperar_perfis_de_seguidores',
+                'id': 'identificador',
+                'in_reply_to_status_id': 'em_resposta_ao_tweet_id',
+                'in_reply_to_user_id': 'em_resposta_ao_usuario_id',
+                'keyword': 'palavra-chave',
+                'location': 'localizacao',
+                'max_date': 'data_max',
+                'media_folder': 'pasta_de_midia',
+                'medias': 'midias',
+                'min_date': 'data_min',
+                'name': 'nome',
+                'output': 'pasta_da_saida',
+                'profile': 'perfil',
+                'protected': 'protegido',
+                'quote_count': 'quant_citacoes',
+                'reply_count': 'quant_respostas',
+                'retweet_count': 'quant_retuites',
+                'retweet_id': 'id_do_tweet_retuitado',
+                'retweeted_user_id': 'id_do_usuario_retuitado',
+                'screen_name': 'nome_de_exibicao',
+                'text': 'texto',
+                'tokens': 'chaves_de_acesso',
+                'tweets': 'tweets',
+                'user': 'usuario',
+                'users': 'usuarios',
+                'users_to_download_media': 'usuarios_a_baixar_midias',
+                'words': 'palavras',
+                'words_to_download_media': 'palavras_a_baixar_midias'
+            }
+        }
+    }
+    for w in translation['en']['pt']:
+        translation['pt']['en'][translation['en']['pt'][w]] = w
+
+    if word not in translation[source][target]:
+        print('cannot find translation of "%s" from %s to %s' % (word, source, target))
+        exit(0)
+
+    return translation[source][target][word]
+
+
+def could_be_list(mlist):
+    is_ok = False
+    try:
+        _ = list(mlist)
+        is_ok = True
+    except:
+        pass
+
+    return is_ok
+
+
+def translate_node(jason, source, target):
+    if type(jason) == dict:
+        new_object = {}
+        for k in jason:
+            new_object[translate_word(k, source, target)] = translate_node(jason[k], source, target)
+        return new_object
+
+    if could_be_list(jason):
+        frozen_later = type(jason) == frozenset
+        new_type = type(jason) if not frozen_later else set()
+        new_object = new_type()
+
+        if 'append' in dir(new_object):
+            for element in jason:
+                new_object.append(translate_node(element, source, target))
+            return new_object
+
+        if 'add' in dir(new_object):
+            for element in jason:
+                new_object.add(translate_node(element, source, target))
+            return new_object if not frozen_later else frozenset(new_object)
+
+        return jason
+
+    return jason
+
+
 def is_none_string(value):
     return str(value).strip().lower() in [ 'none', 'null' ]
 
@@ -67,10 +185,10 @@ def filename_to_profiles(filename):
 
 def username_folder_to_json(folder, outside_folder, inside_folder):
     Json = {
-        'perfil': filename_to_json(folder + 'perfil.json'),
+        'profile': filename_to_json(folder + 'perfil.json'),
         'tweets': sorted([ filename_to_json(folder + 'posts/' + filename) \
             for filename in list_directory(folder + 'posts/') ], \
-            key=lambda x: str(x['created_at'])[:16])[::-1],
+            key=lambda x: str(x['criado_em'])[:16])[::-1],
         'followers': filename_to_profiles(folder + 'followers.txt'),
         'following': filename_to_profiles(folder + 'following.txt')
     }
@@ -83,7 +201,8 @@ def username_folder_to_json(folder, outside_folder, inside_folder):
 
         Json['media_folder'] = assign
 
-    return Json
+    return translate_json_keys(Json, 'en', 'pt')
+    # return Json
 
 
 def contains_media(folder):
@@ -94,7 +213,7 @@ def hashtag_folder_to_json(folder, outside_folder, inside_folder):
     Json = {
         'tweets': sorted([ filename_to_json(folder + 'posts/' + filename) \
             for filename in list_directory(folder + 'posts/') ], \
-            key=lambda x: str(x['created_at'])[:16])[::-1],
+            key=lambda x: str(x['criado_em'])[:16])[::-1],
     }
 
     if contains_media(folder):
@@ -105,7 +224,8 @@ def hashtag_folder_to_json(folder, outside_folder, inside_folder):
 
         Json['media_folder'] = assign
 
-    return Json
+    return translate_json_keys(Json, 'en', 'pt')
+    # return Json
 
 
 def randomized(mlist):
@@ -220,7 +340,7 @@ def dumps(sts):
         # try: # checklist = sts.extended_entities['media']
         # print('>>>>>> medias ==' + str(status['medias']))
 
-    return json.dumps(status, ensure_ascii=False)
+    return json.dumps(translate_json_keys(status, 'en', 'pt'), ensure_ascii=False)
 
 
 def dumps_perfil(usr):
@@ -248,7 +368,7 @@ def dumps_perfil(usr):
     perfil['friends_count'] = usr.friends_count
     perfil['created_at'] = str(usr.created_at)
     perfil['favourites_count'] = usr.favourites_count
-    return json.dumps(perfil, ensure_ascii=False)
+    return json.dumps(translate_json_keys(perfil, 'en', 'pt'), ensure_ascii=False)
 
 
 class shell:
@@ -435,9 +555,9 @@ class shell:
                     if usertag not in Json:
                         Json[usertag] = {}
                     if is_username_folder(name + usertag + '/'):
-                        Json[usertag]['user'] = username_folder_to_json(name + usertag + '/', self.outside_data_folder, self.output)
+                        Json[usertag][translate_word('user', 'en', 'pt')] = username_folder_to_json(name + usertag + '/', self.outside_data_folder, self.output)
                     else:
-                        Json[usertag]['keyword'] = hashtag_folder_to_json(name + usertag + '/', self.outside_data_folder, self.output)
+                        Json[usertag][translate_word('keyword', 'en', 'pt')] = hashtag_folder_to_json(name + usertag + '/', self.outside_data_folder, self.output)
                         
         return Json
 
@@ -512,7 +632,7 @@ class shell:
             Endereço url da mídia.
         """
         r = requests.get(url) 
-        time.sleep(random.uniform(0, 4))
+        time.sleep(random.uniform(0, 8))
         with open(filename, 'wb') as f: 
             f.write(r.content) 
 
@@ -531,9 +651,11 @@ class shell:
         try:
             post = post_path[0]
             path = post_path[1] + post['id']
-            num = len(post['medias']) > 1
+            medias_key = 'medias' if medias in post else 'midias'
+
+            num = len(post[medias_key]) > 1
             key = 1 
-            for photo in post['medias']:
+            for photo in post[medias_key]:
                 count = '_' + str(key) if num else ''
                 if photo[0] == 'photo':
                     filename = path + count + '.jpg' 
@@ -561,7 +683,8 @@ class shell:
         with open(name, 'w') as f:
             f.write(msg)
 
-        if download_media and json.loads(msg)['medias']:
+        medias_key = 'medias' if 'medias' in json.loads(msg) else 'midias'
+        if download_media and json.loads(msg)[medias_key]:
             _ = self.__iter_media(( json.loads(msg), media_name ))
 
 

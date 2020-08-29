@@ -35,6 +35,7 @@ def assert_folder_exists(full_path):
 
 if __name__ == '__main__':
     jason = None
+    is_portuguese = False
     if len(sys.argv) > 1:
         filename = sys.argv[1]
         if os.path.isfile(filename):
@@ -42,19 +43,28 @@ if __name__ == '__main__':
                 try:
                     jason = json.load(fr)
                 except Exception as e:
-                    jason = { 'error': 'problem loading "%s": %s' % (filename, str(e)) }
+                    jason = { 'erro': 'problem loading "%s": %s' % (filename, str(e)) }
+
+            if 'pasta_da_saida' in jason:
+                is_portuguese = True
+                jason['output'] = copy.deepcopy(jason['pasta_da_saida'])
+
             jason['output'] = get_full_path(jason['output']) if 'output' in jason else get_full_path('data')
+
             try:
                 assert_folder_exists(jason['output'])
             except Exception as e:
                 folder = copy.deepcopy(jason['output'])
-                jason = { 'error': 'problem creating "%s" folder: %s' % (folder, str(e)) }
+                jason = { 'erro': 'problem creating "%s" folder: %s' % (folder, str(e)) }
         else:
-            jason = { 'error': 'file "%s" not found' % filename }
+            jason = { 'erro': 'file "%s" not found' % filename }
     else:
-        jason = { 'error': 'filename must be passed as argument'}
+        jason = { 'erro': 'filename must be passed as argument'}
 
     if '--output-folder' in sys.argv:
         print(jason['output'] if 'output' in jason else '/')
     else:
+        if is_portuguese:
+            jason['pasta_da_saida'] = copy.deepcopy(jason['output'])
+            del jason['output']
         print(json.dumps(jason))
