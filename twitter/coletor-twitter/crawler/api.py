@@ -57,7 +57,7 @@ def translate_word(word, source, target):
                 'keyword': 'palavra-chave',
                 'location': 'localizacao',
                 'max_date': 'data_max',
-                'media_folder': 'pasta_de_midia',
+                'media_folder': 'pasta_midias',
                 'medias': 'midias',
                 'min_date': 'data_min',
                 'name': 'nome',
