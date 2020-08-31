@@ -335,6 +335,8 @@ def dumps(sts):
         status['medias'] = []
 
     # if str(status['id']) == '':
+        # print(status)
+        # print(json.dumps(translate_json_keys(status, 'en', 'pt'), ensure_ascii=False))
         # exit(0)
         # checklist = []
         # try: # checklist = sts.extended_entities['media']
@@ -500,7 +502,7 @@ class shell:
 
         # keep input json on class
         self.__json = copy.deepcopy(Json)
-        
+
         # setting users ans tags available to download
         self.downloading_users = self.get_downloading_available('users')
         self.downloading_words = self.get_downloading_available('words')
@@ -521,7 +523,7 @@ class shell:
 
         if pattern in self.__json:
             if download_key_pattern in self.__json:
-                assign_set = frozenset([ entity for entity in self.__json[download_key_pattern] if user in self.__json[pattern] ])
+                assign_set = frozenset([ entity for entity in self.__json[download_key_pattern] if entity in self.__json[pattern] ])
             else:
                 assign_set = frozenset(self.__json[pattern])
 
@@ -650,8 +652,9 @@ class shell:
         """
         try:
             post = post_path[0]
-            path = post_path[1] + post['id']
-            medias_key = 'medias' if medias in post else 'midias'
+            id_key = 'id' if 'id' in post else 'identificador'
+            medias_key = 'medias' if 'medias' in post else 'midias'
+            path = post_path[1] + post[id_key]
 
             num = len(post[medias_key]) > 1
             key = 1 
@@ -684,6 +687,10 @@ class shell:
             f.write(msg)
 
         medias_key = 'medias' if 'medias' in json.loads(msg) else 'midias'
+
+        # if str(id_post) != '':
+            # return
+
         if download_media and json.loads(msg)[medias_key]:
             _ = self.__iter_media(( json.loads(msg), media_name ))
 
