@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 import time
 import json
 from sys import argv
@@ -23,6 +24,7 @@ def main(input_json_folder):
   channels = data['id_canais_youtube']
   videos = data['id_videos_youtube']
   keywords = data['palavras']
+  max_comments = int(data['max_comentarios'])
 
   youtube = build('youtube', 'v3', developerKey=api_keys[api_key_usage])
 
@@ -44,7 +46,7 @@ def main(input_json_folder):
   for video in videos:
     while(api_key_usage != len(api_keys) and still_collecting):
       try:
-        videos_info.append(api.get_video_comments(youtube, video))
+        videos_info.append(api.get_video_comments(youtube, video, max_comments))
         still_collecting = False
       except:
         api_key_usage += 1
@@ -73,8 +75,8 @@ def main(input_json_folder):
   if(still_collecting): print("\n\nAVISO!\n\nA quantidade diária de coletas permitida nas API Keys informadas foi atingida, portanto alguns dados não puderam ser coletados. Volte amanhã ou insira novas API Keys para coletar mais dados.\n\n")
   else:print("\n\nDados salvos com sucesso!\n\n")
 
-  target_json_folder = '/var/twitter-crawler/jsons/'
-  with open((target_json_folder + (str(int(time.time()*1000)) + '.json')), 'w') as outfile:
+  output_file = os.path.join('./var/youtube-crawler/jsons/', (str(int(time.time()*1000)) + '.json'))
+  with open(output_file, 'w') as outfile:
       json.dump(final_dict, outfile)
 
 input_json_folder = argv[1]

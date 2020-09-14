@@ -116,7 +116,7 @@ class YoutubeCrawlerAPI():
 
     return videos_details
 
-  def get_video_comments(self, youtube, video_id):
+  def get_video_comments(self, youtube, video_id, max_comments):
     next_video_request = youtube.commentThreads().list(
             part='snippet',
             videoId=video_id,
@@ -124,7 +124,8 @@ class YoutubeCrawlerAPI():
         )
     
     comments = {}
-    while next_video_request:
+    still_collecting = True
+    while(next_video_request and still_collecting):
       next_video_request_response = next_video_request.execute()
       video_results = next_video_request_response["items"]
 
@@ -154,6 +155,9 @@ class YoutubeCrawlerAPI():
         comment_info['data_publicacao'] = published_at
 
         comments[comment_id] = comment_info
+      
+      if(len(comments) >= max_comments):
+        still_collecting = False
       
       next_video_request = youtube.commentThreads().list_next(
           next_video_request, next_video_request_response
