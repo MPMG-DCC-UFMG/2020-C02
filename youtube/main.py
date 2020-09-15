@@ -1,22 +1,30 @@
 # -*- coding: utf-8 -*-
 
+import crawler.api
 import os
 import time
 import json
 from sys import argv
 
-from crawler import YoutubeCrawlerAPI
 from googleapiclient.discovery import build
 
 def main(input_json_folder):
-  api = YoutubeCrawlerAPI()
+  api = crawler.api.YoutubeCrawlerAPI()
   api_keys = []
   api_key_usage = -1
   still_collecting = True
+
+  data = {}
   
-  input_json = open (input_json_folder, "r") 
-  data = json.loads(input_json.read()) 
-  input_json.close() 
+  if '-d' in argv:
+    idx = argv.index('-d') + 1
+    data = json.loads(argv[idx])
+  else:
+    input_json = open(input_json_folder, "r") 
+    data = json.loads(input_json.read()) 
+    input_json.close() 
+
+  # print(input_json)
 
   for api_key in data['chaves_de_acesso']:
     api_keys.append(api_key['token_acesso'])
@@ -24,7 +32,7 @@ def main(input_json_folder):
   channels = data['id_canais_youtube']
   videos = data['id_videos_youtube']
   keywords = data['palavras']
-  max_comments = int(data['max_comentarios'])
+  max_comments = int(data['max_comentarios']) if 'max_comentarios' in data else None
 
   youtube = build('youtube', 'v3', developerKey=api_keys[api_key_usage])
 
