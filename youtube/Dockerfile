@@ -3,6 +3,7 @@ FROM ubuntu:16.04
 
 # Set encoding
 ENV LANG C.UTF-8
+ENV TZ America/Sao_Paulo
 
 # Update Ubuntu Software repository
 RUN apt-get update -y && apt-get upgrade -y

@@ -1,3 +1,20 @@
+import copy
+import datetime
+import dateutil.parser
+import pytz
+import time
+import tzlocal
+
+
+def utc2local(utc_time):
+  '''
+  Thanks to https://stackoverflow.com/a/32904812 for the solution
+  '''
+  local_timezone = tzlocal.get_localzone() # get pytz tzinfo
+  # print(local_timezone)
+  return utc_time.replace(tzinfo=pytz.utc).astimezone(local_timezone)
+
+
 class YoutubeCrawlerAPI():
   def get_video_statistics(self, youtube, video_id):
     video_analytics_info = youtube.videos().list(
@@ -116,15 +133,22 @@ class YoutubeCrawlerAPI():
 
     return videos_details
 
-  def get_video_comments(self, youtube, video_id, max_comments):
+  def get_video_comments(self, youtube, video_id, max_comments, min_dt, max_dt):
     next_video_request = youtube.commentThreads().list(
             part='snippet',
             videoId=video_id,
             maxResults=50,
-            order='relevance' # order='time'
+            order='time'
+            # order='relevance' # order='time'
         )
 
+    if(min_dt is not None):
+      min_dt = (min_dt - datetime.timedelta(minutes=6)).replace(tzinfo=tzlocal.get_localzone()).astimezone(tzlocal.get_localzone())
+    if(max_dt is not None):
+      max_dt = (max_dt - datetime.timedelta(minutes=6)).replace(tzinfo=tzlocal.get_localzone()).astimezone(tzlocal.get_localzone())
+
     comments = {}
+    oldest_published_dt = datetime.datetime.now() + datetime.timedelta(days=360)
     still_collecting = True
     while(next_video_request and still_collecting):
       next_video_request_response = next_video_request.execute()
@@ -149,6 +173,7 @@ class YoutubeCrawlerAPI():
           author_id = single_comment["snippet"]["authorChannelId"]['value']
           author_name = single_comment["snippet"]["authorDisplayName"]
           like_count = single_comment["snippet"]["likeCount"]
+        published_at_dt = utc2local(dateutil.parser.parse(published_at))
 
         comment_info = {}
         comment_info['id_video'] = video_id
@@ -159,10 +184,22 @@ class YoutubeCrawlerAPI():
         comment_info['numero_likes'] = like_count
         comment_info['data_publicacao'] = published_at
 
-        comments[comment_id] = comment_info
-        print(comment_info)
+        oldest_published_dt = copy.deepcopy(published_at_dt)
+
+        sat_min_date = min_dt is None or published_at_dt >= min_dt
+        sat_max_date = max_dt is None or published_at_dt < max_dt
+        # print(published_at_dt, min_dt, sat_min_date)
+        if sat_min_date and sat_max_date:
+          comments[comment_id] = comment_info
+          # print('>> added')
+
+        # print(published_at)
+        # time.sleep(0.25)
+        # print(comment_info)
       
       if(max_comments is not None and len(comments) >= max_comments):
+        still_collecting = False
+      elif(oldest_published_dt < min_dt):
         still_collecting = False
       
       next_video_request = youtube.commentThreads().list_next(

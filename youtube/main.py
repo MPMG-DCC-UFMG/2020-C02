@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import crawler.api
+import dateutil.parser
 import os
 import time
 import json
@@ -33,6 +34,8 @@ def main(input_json_folder):
   videos = data['id_videos_youtube']
   keywords = data['palavras']
   max_comments = int(data['max_comentarios']) if 'max_comentarios' in data else None
+  data_min = dateutil.parser.parse(data['data_min']) if 'data_min' in data else None
+  data_max = dateutil.parser.parse(data['data_max']) if 'data_max' in data else None
 
   youtube = build('youtube', 'v3', developerKey=api_keys[api_key_usage])
 
@@ -54,12 +57,13 @@ def main(input_json_folder):
   for video in videos:
     while(api_key_usage != len(api_keys) and still_collecting):
       try:
-        videos_info.append(api.get_video_comments(youtube, video, max_comments))
+        videos_info.append(api.get_video_comments(youtube, video, max_comments, data_min, data_max))
         still_collecting = False
-      except:
+      except Exception as e:
         api_key_usage += 1
         if(api_key_usage < (len(api_keys) - 1)):
           youtube = build('youtube', 'v3', developerKey=api_keys[api_key_usage])
+        print('problema na coleta: %s' % str(e))
 
   keywords_info = []
   api_key_usage = -1
