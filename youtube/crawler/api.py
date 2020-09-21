@@ -94,7 +94,7 @@ class YoutubeCrawlerAPI():
     final_response_dict['informacao_canal'] = channel_profile
     final_response_dict['informacao_videos'] = videos_details
 
-    return final_response_dict
+    return {channel_id: final_response_dict}
 
   def get_videos_by_keyword(self, youtube, keyword):
     next_video_request = youtube.search().list(
