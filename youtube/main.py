@@ -41,6 +41,7 @@ def main(input_json_folder):
 
   channels_info = []
   for channel in channels:
+    still_collecting = True
     while(api_key_usage != len(api_keys) and still_collecting):
       try:
         channels_info.append(api.get_channel_videos(youtube, channel))
@@ -50,11 +51,11 @@ def main(input_json_folder):
         if(api_key_usage < (len(api_keys) - 1)):
           youtube = build('youtube', 'v3', developerKey=api_keys[api_key_usage])
 
-
   videos_info = []
   api_key_usage = -1
   still_collecting = True
   for video in videos:
+    still_collecting = True
     while(api_key_usage != len(api_keys) and still_collecting):
       try:
         videos_info.append(api.get_video_comments(youtube, video, max_comments, data_min, data_max))
@@ -69,6 +70,7 @@ def main(input_json_folder):
   api_key_usage = -1
   still_collecting = True
   for keyword in keywords:
+    still_collecting = True
     while(api_key_usage != len(api_keys) and still_collecting):
       try:
         keywords_info.append(api.get_videos_by_keyword(youtube, keyword))
