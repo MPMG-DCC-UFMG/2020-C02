@@ -26,7 +26,7 @@ else:
             with open(target_json_folder + '../' + argv[1].split('/')[-1], 'rt') as f:
                 Json = json.dumps(json.load(f))
         except:
-            target_json = json.dumps({ error_key: 'Usage: "python3 main.py <input-json>" or "python3 main.py -d <input-json-dump>"' })
+            Json = json.dumps({ error_key: 'Usage: "python3 main.py <input-json>" or "python3 main.py -d <input-json-dump>"' })
 
     # joining_timestamps = [ '1598620735908' ]
     # target_json = json.dumps(api.shell(Json, 'users').joined_timestamps(joining_timestamps))
