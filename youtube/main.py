@@ -10,6 +10,10 @@ from sys import argv
 from googleapiclient.discovery import build
 
 def main(input_json_folder):
+  target_json_folder = '/var/youtube-crawler/jsons/'
+  if not os.path.isdir(target_json_folder):
+    os.mkdir(target_json_folder)
+
   api = crawler.api.YoutubeCrawlerAPI()
   api_keys = []
   api_key_usage = -1
@@ -89,9 +93,12 @@ def main(input_json_folder):
   if(still_collecting): print("\n\nAVISO!\n\nA quantidade diária de coletas permitida nas API Keys informadas foi atingida, portanto alguns dados não puderam ser coletados. Volte amanhã ou insira novas API Keys para coletar mais dados.\n\n")
   else:print("\n\nDados salvos com sucesso!\n\n")
 
-  output_file = os.path.join(data['pasta_da_saida'], (str(int(time.time()*1000)) + '.json'))
+  output_file = os.path.join(target_json_folder, (str(int(time.time()*1000)) + '.json'))
+  # output_file = os.path.join(data['pasta_da_saida'], (str(int(time.time()*1000)) + '.json'))
   with open(output_file, 'w') as outfile:
       json.dump(final_dict, outfile)
+
+  print(json.dumps(final_dict))
 
 input_json_folder = argv[1]
 main(argv[1])
