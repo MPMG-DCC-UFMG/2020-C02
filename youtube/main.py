@@ -2,12 +2,14 @@
 
 import crawler.api
 import dateutil.parser
+import json
 import os
 import time
-import json
-from sys import argv
+import urllib
 
 from googleapiclient.discovery import build
+from sys import argv
+
 
 ERROR_KEY = 'erro'
 
@@ -22,6 +24,32 @@ def make_unique_list(mlist):
             already.add(element)
 
     return answer
+    
+
+def link_to_id(url):
+    url = str(url)
+
+    is_url = 'http:' in url or 'https:' in url or 'www.' in url or 'youtube.com' in url or 'youtu.be' in url
+    if not is_url:
+        return url
+
+
+    if 'youtube.com/watch?' in url and 'v=' in url:
+        get_dict = {}
+        try:
+            get_dict = dict(urllib.parse.parse_qs(urllib.parse.urlsplit(url).query))
+        except:
+            pass
+
+        return get_dict['v'][0] if 'v' in get_dict else url
+
+
+    if '/channel/' in url or 'youtu.be/' in url:
+        url_without_get = url if '?' not in url else url[:url.find('?')]
+        return url_without_get.split('/')[-1]
+
+
+    return url
 
 
 def main(input_json_folder):
@@ -58,8 +86,8 @@ def main(input_json_folder):
     if not api_keys:
         final_dict[ERROR_KEY] = 'Pelo menos uma chave de acesso válida deve ser fornecida'
 
-    channels = make_unique_list(data['id_canais_youtube']) if 'id_canais_youtube' in data else []
-    videos = make_unique_list(data['id_videos_youtube']) if 'id_videos_youtube' in data else []
+    channels = make_unique_list(list(map(link_to_id, data['id_canais_youtube']))) if 'id_canais_youtube' in data else []
+    videos = make_unique_list(list(map(link_to_id, data['id_videos_youtube']))) if 'id_videos_youtube' in data else []
     keywords = make_unique_list(data['palavras']) if 'palavras' in data else []
     max_comments = int(data['max_comentarios']) if 'max_comentarios' in data else None
     data_min = dateutil.parser.parse(data['data_min']) if 'data_min' in data else None
