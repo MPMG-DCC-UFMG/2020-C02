@@ -5,6 +5,25 @@ import pytz
 import time
 import tzlocal
 
+from tqdm import tqdm
+
+
+def username2channels(username, youtube):
+    # channels # forUsername
+
+    request = youtube.channels().list(
+        part='id',
+        forUsername=username
+    )
+
+    items = []
+    try:
+        items = request.execute()['items']
+    except:
+        pass
+
+    return [ channel_info['id'] for channel_info in items ]
+
 
 def utc2local(utc_time):
   '''
@@ -13,6 +32,44 @@ def utc2local(utc_time):
   local_timezone = tzlocal.get_localzone() # get pytz tzinfo
   # print(local_timezone)
   return utc_time.replace(tzinfo=pytz.utc).astimezone(local_timezone)
+
+
+def make_unique_list(mlist):
+    answer = []
+    already = set()
+
+    for element in mlist:
+        if element not in already:
+            answer.append(element)
+            already.add(element)
+
+    return answer
+    
+
+def link_to_id(url):
+    url = str(url)
+
+    is_url = 'http:' in url or 'https:' in url or 'www.' in url or 'youtube.com' in url or 'youtu.be' in url
+    if not is_url:
+        return url
+
+
+    if 'youtube.com/watch?' in url and 'v=' in url:
+        get_dict = {}
+        try:
+            get_dict = dict(urllib.parse.parse_qs(urllib.parse.urlsplit(url).query))
+        except:
+            pass
+
+        return get_dict['v'][0] if 'v' in get_dict else url
+
+
+    if '/channel/' in url or 'youtu.be/' in url:
+        url_without_get = url if '?' not in url else url[:url.find('?')]
+        return url_without_get.split('/')[-1]
+
+
+    return url
 
 
 class YoutubeCrawlerAPI():
@@ -40,6 +97,11 @@ class YoutubeCrawlerAPI():
     channel_profile = {}
     videos_details = {}
 
+    channel_key = copy.deepcopy(channel_id)
+    if '/' in channel_id:
+        channel_id = channel_id.split('/')[-1]
+        channel_key = channel_key.replace('/', ': ')
+
     # Channel information
     request = youtube.channels().list(
             part='statistics',
@@ -59,6 +121,7 @@ class YoutubeCrawlerAPI():
 
     # Videos information
     channels_response = youtube.channels().list(part='contentDetails', id=channel_id).execute()
+
     for channel in channels_response['items']:
         uploads_list_id = channel["contentDetails"]["relatedPlaylists"]["uploads"]
         playlistitems_list_request = youtube.playlistItems().list(
@@ -66,8 +129,12 @@ class YoutubeCrawlerAPI():
             part="snippet",
             maxResults=50
           )
+
+        bar = None
         while playlistitems_list_request:
             playlistitems_list_response = playlistitems_list_request.execute()
+            if bar is None:
+                bar = tqdm(total=int(playlistitems_list_response['pageInfo']['totalResults']))
             for playlist_item in playlistitems_list_response["items"]:
                 video_id = playlist_item["snippet"]["resourceId"]["videoId"]
 
@@ -87,14 +154,18 @@ class YoutubeCrawlerAPI():
                 video_info['estatisticas'] = video_statistics
                 videos_details[video_id] = video_info
 
+                bar.update(1)
+
             playlistitems_list_request = youtube.playlistItems().list_next(
                 playlistitems_list_request, playlistitems_list_response
             )
 
+        bar.close()
+
     final_response_dict['informacao_canal'] = channel_profile
     final_response_dict['informacao_videos'] = videos_details
 
-    return {channel_id: final_response_dict}
+    return {channel_key: final_response_dict}
 
   def get_videos_by_keyword(self, youtube, keyword):
     next_video_request = youtube.search().list(
