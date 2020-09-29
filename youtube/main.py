@@ -7,7 +7,7 @@ import json
 import os
 import time
 
-from googleapiclient.discovery import build
+# from googleapiclient.discovery import build
 from sys import argv
 
 
@@ -20,10 +20,8 @@ def main(input_json_folder):
         os.mkdir(target_json_folder)
     output_file = os.path.join(target_json_folder, (str(int(time.time()*1000)) + '.json'))
 
-    api = crawler.api.YoutubeCrawlerAPI()
-    api_keys = []
-    api_key_usage = -1
     still_collecting = True
+    youtube = None
 
     data = {}
     final_dict = {}
@@ -39,15 +37,8 @@ def main(input_json_folder):
     if ERROR_KEY in data:
         final_dict = copy.deepcopy(data)
     else:
-        for api_key in data['chaves_de_acesso']:
-            this_key = api_key['token_acesso']
-            try:
-                _ = build('youtube', 'v3', developerKey=this_key)
-                api_keys.append(this_key)
-            except:
-                continue
-
-        if not api_keys:
+        youtube = crawler.api.YoutubeCrawlerAPI(data)
+        if not youtube.apis:
             final_dict[ERROR_KEY] = 'Pelo menos uma chave de acesso válida deve ser fornecida'
 
     
@@ -65,7 +56,7 @@ def main(input_json_folder):
             final_dict[ERROR_KEY] = 'Erro de inicialização: ' + str(e).strip()
 
         if ERROR_KEY not in final_dict:
-            youtube = build('youtube', 'v3', developerKey=api_keys[api_key_usage])
+            # youtube = build('youtube', 'v3', developerKey=api_keys[api_key_usage])
 
             channels_info = {}
             for channel_name in channels_container:
@@ -74,53 +65,45 @@ def main(input_json_folder):
 
                 for channel in channels:
                     still_collecting = True
-                    while(api_key_usage != len(api_keys) and still_collecting):
+                    while(still_collecting):
                         try:
-                            channels_info.update(api.get_channel_videos(youtube, channel, data_min))
+                            channels_info.update(youtube.get_channel_videos(channel, data_min))
                             still_collecting = False
                         except Exception as e:
                             if 'error 404' in str(e).lower():
                                 channels_info[channel] = { ERROR_KEY: 'canal não encontrado' }
                                 still_collecting = False
                             else:
-                                api_key_usage += 1
-                                if(api_key_usage < (len(api_keys) - 1)):
-                                    youtube = build('youtube', 'v3', developerKey=api_keys[api_key_usage])
-                                print(str(e))
+                                print('problema na coleta: %s\nWaiting 60 seconds...' % str(e))
+                                time.sleep(60)
 
             videos_info = {}
-            api_key_usage = -1
             still_collecting = True
             for video in videos:
                 still_collecting = True
-                while(api_key_usage != len(api_keys) and still_collecting):
+                while(still_collecting):
                     try:
-                        videos_info[video] = api.get_video_comments(youtube, video, max_comments, data_min, data_max)
+                        videos_info[video] = youtube.get_video_comments(video, max_comments, data_min, data_max)
                         still_collecting = False
                     except Exception as e:
                         if 'error 404' in str(e).lower():
                             videos_info[video] = { ERROR_KEY: 'video não encontrado' }
                             still_collecting = False
                         else:
-                            api_key_usage += 1
-                            if(api_key_usage < (len(api_keys) - 1)):
-                                youtube = build('youtube', 'v3', developerKey=api_keys[api_key_usage])
-                            print('problema na coleta: %s' % str(e))
+                            print('problema na coleta: %s\nWaiting 60 seconds...' % str(e))
+                            time.sleep(60)
 
             keywords_info = {}
-            api_key_usage = -1
             still_collecting = True
             for keyword in keywords:
                 still_collecting = True
-                while(api_key_usage != len(api_keys) and still_collecting):
+                while(still_collecting):
                     try:
-                        keywords_info[keyword] = api.get_videos_by_keyword(youtube, keyword) if keyword.strip() else {}
+                        keywords_info[keyword] = youtube.get_videos_by_keyword(keyword) if keyword.strip() else {}
                         still_collecting = False
                     except Exception as e:
-                        api_key_usage += 1
-                        if(api_key_usage < (len(api_keys) - 1)):
-                            youtube = build('youtube', 'v3', developerKey=api_keys[api_key_usage])
-                        print('problema na coleta: %s' % str(e))
+                        print('problema na coleta: %s\nWaiting 60 seconds...' % str(e))
+                        time.sleep(60)
 
 
             if(len(keywords) == 0): still_collecting = False

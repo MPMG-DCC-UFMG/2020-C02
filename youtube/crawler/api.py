@@ -6,6 +6,7 @@ import time
 import tzlocal
 import urllib
 
+from googleapiclient.discovery import build
 from tqdm import tqdm
 
 
@@ -15,7 +16,7 @@ memoize_channels = {}
 def username2channels(username, youtube):
     # channels # forUsername
 
-    request = youtube.channels().list(
+    request = youtube.this_api().channels().list(
         part='id',
         forUsername=username
     )
@@ -77,8 +78,32 @@ def link_to_id(url):
 
 
 class YoutubeCrawlerAPI():
-    def get_video_statistics(self, youtube, video_id):
-        video_analytics_info = youtube.videos().list(
+    def __init__(self, data):
+        self.apis = []
+        # self.this_api = None
+
+        for api_key in data['chaves_de_acesso']:
+            this_key = api_key['token_acesso']
+            try:
+                self.apis.append(build('youtube', 'v3', developerKey=this_key))
+                # self.api_keys.append(this_key)
+            except:
+                continue
+
+        self.api_index = (len(self.apis)-1) if self.apis else None
+        # self.this_api = self.apis[self.api_index] if self.api_index is not None else None
+
+        return
+
+
+    def this_api(self):
+        self.api_index = (self.api_index + 1) % len(self.apis)
+        # print('api_index == ' + str(self.api_index))
+        return self.apis[self.api_index]
+
+
+    def get_video_statistics(self, video_id):
+        video_analytics_info = self.this_api().videos().list(
             id=video_id,
             part="statistics",
             maxResults=50
@@ -96,7 +121,7 @@ class YoutubeCrawlerAPI():
 
         return result_dict
 
-    def get_channel_videos(self, youtube, channel_id, min_dt=None):
+    def get_channel_videos(self, channel_id, min_dt=None):
         global memoize_channels
 
         final_response_dict = {}
@@ -110,7 +135,7 @@ class YoutubeCrawlerAPI():
 
         if channel_id not in memoize_channels:
             # Channel information
-            request = youtube.channels().list(
+            request = self.this_api().channels().list(
                 part='statistics',
                 id=channel_id
             )
@@ -124,7 +149,7 @@ class YoutubeCrawlerAPI():
 
             subscriber_count = result['items'][0]['statistics']['subscriberCount']
 
-            request = youtube.channels().list(
+            request = self.this_api().channels().list(
                 part='snippet',
                 id=channel_id
             )
@@ -135,11 +160,11 @@ class YoutubeCrawlerAPI():
             channel_profile['numero_inscritos'] = subscriber_count
 
             # Videos information
-            channels_response = youtube.channels().list(part='contentDetails', id=channel_id).execute()
+            channels_response = self.this_api().channels().list(part='contentDetails', id=channel_id).execute()
 
             for channel in channels_response['items']:
                 uploads_list_id = channel["contentDetails"]["relatedPlaylists"]["uploads"]
-                playlistitems_list_request = youtube.playlistItems().list(
+                playlistitems_list_request = self.this_api().playlistItems().list(
                     playlistId=uploads_list_id,
                     part="snippet",
                     maxResults=50
@@ -150,7 +175,7 @@ class YoutubeCrawlerAPI():
                     playlistitems_list_response = playlistitems_list_request.execute()
 
                     if bar is None:
-                        bar = tqdm(total=int(playlistitems_list_response['pageInfo']['totalResults']))
+                        bar = tqdm(total=int(playlistitems_list_response['pageInfo']['totalResults']), ascii=True)
                     published_at_dts = []
 
                     for playlist_item in playlistitems_list_response["items"]:
@@ -170,7 +195,7 @@ class YoutubeCrawlerAPI():
                         video_info['data_publicacao'] = published_at
                         video_info['link_video'] = ('https://www.youtube.com/watch?v=' + video_id)
 
-                        video_statistics = self.get_video_statistics(youtube, video_id)
+                        video_statistics = self.get_video_statistics(video_id)
 
                         video_info['estatisticas'] = video_statistics
 
@@ -182,7 +207,7 @@ class YoutubeCrawlerAPI():
                     if min_dt is not None and all([ published_at_dt < min_dt for published_at_dt in published_at_dts ]):
                         break
 
-                    playlistitems_list_request = youtube.playlistItems().list_next(
+                    playlistitems_list_request = self.this_api().playlistItems().list_next(
                         playlistitems_list_request, playlistitems_list_response
                     )
 
@@ -196,15 +221,15 @@ class YoutubeCrawlerAPI():
         return {channel_key: memoize_channels[channel_id]}
 
 
-    def get_videos_by_keyword(self, youtube, keyword, max_results=50):
-        next_video_request = youtube.search().list(
+    def get_videos_by_keyword(self, keyword, max_results=50):
+        next_video_request = self.this_api().search().list(
             part='snippet',
             type='video',
             regionCode='BR',
             q=keyword,
             maxResults=max_results
         )
-        
+
         videos_details = {}
         while next_video_request:
             next_video_request_response = next_video_request.execute()
@@ -223,7 +248,7 @@ class YoutubeCrawlerAPI():
                 video_info['data_publicacao'] = published_at
                 video_info['link_video'] = ('https://www.youtube.com/watch?v=' + video_id)
 
-                video_statistics = self.get_video_statistics(youtube, video_id)
+                video_statistics = self.get_video_statistics(video_id)
                 video_info['estatisticas'] = video_statistics
                 videos_details[video_id] = video_info
 
@@ -236,10 +261,10 @@ class YoutubeCrawlerAPI():
 
         return videos_details
 
-    def get_video_comments(self, youtube, video_id, max_comments, min_dt, max_dt):
+    def get_video_comments(self, video_id, max_comments, min_dt, max_dt):
         # print(youtube.captions().download(id=video_id).execute())
 
-        next_video_request = youtube.commentThreads().list(
+        next_video_request = self.this_api().commentThreads().list(
             part='snippet',
             videoId=video_id,
             maxResults=50,
@@ -305,10 +330,10 @@ class YoutubeCrawlerAPI():
             
             if(max_comments is not None and len(comments) >= max_comments):
                 still_collecting = False
-            elif(oldest_published_dt < min_dt):
+            elif(min_dt is not None and oldest_published_dt < min_dt):
                 still_collecting = False
             
-            next_video_request = youtube.commentThreads().list_next(
+            next_video_request = self.this_api().commentThreads().list_next(
                 next_video_request, next_video_request_response
             )
 
