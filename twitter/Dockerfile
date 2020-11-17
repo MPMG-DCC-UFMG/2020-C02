@@ -13,6 +13,9 @@ RUN apt-get install -y wget curl zip
 # Install python-related packages
 RUN apt-get install -y python3
 
+# Install kafka-needed java library
+RUN apt-get install -y default-jre
+
 # Test python3
 # RUN python3 -c 'print(1997)'
 
