@@ -1,0 +1,15 @@
+network,high_mode,atomic_mode,library_function
+
+twitter,users,perfil,download_profile
+twitter,users,seguidores,download_followers
+twitter,users,seguindo,download_following
+twitter,users,posts,download_single_user
+
+twitter,usuarios,perfil,download_profile
+twitter,usuarios,seguidores,download_followers
+twitter,usuarios,seguindo,download_following
+twitter,usuarios,posts,download_single_user
+
+twitter,words,posts,download
+twitter,keywords,posts,download_single_word
+twitter,palavras,posts,download_single_word
