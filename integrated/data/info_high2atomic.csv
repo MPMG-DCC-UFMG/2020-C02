@@ -13,3 +13,7 @@ twitter,usuarios,posts,download_single_user
 twitter,words,posts,download
 twitter,keywords,posts,download_single_word
 twitter,palavras,posts,download_single_word
+
+instagram,usuarios,perfil,download_profile
+instagram,usuarios,posts,download_single_user_posts
+instagram,palavras,posts,download_single_word_posts
