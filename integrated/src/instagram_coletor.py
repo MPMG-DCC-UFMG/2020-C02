@@ -4,9 +4,9 @@ import sys
 import os
 from datetime import datetime
 
-from data_handle import DataHandle
-import local_instaloader.instaloader as localinstaloader
-from data_collection import DataCollection
+from integrated.src.instagram_data_handle import DataHandle
+import integrated.src.local_instaloader.instaloader as localinstaloader
+from integrated.src.instagram_data_collection import DataCollection
 
 import json
 
@@ -18,6 +18,11 @@ INPUT_JSON_FOLDER = "/data/"
 
 DEFAULT_MAX_COMMENTS = 5000
 DEFAULT_MAX_POSTS = 5000
+
+
+KAFKA_TOPIC_PROFILE = "instagram_crawler_profile"
+KAFKA_TOPIC_POST = "instagram_crawler_post"
+KAFKA_TOPIC_COMMENT = "instagram_crawler_comment"
 
 class Coletor():
     """
@@ -281,7 +286,10 @@ class Coletor():
 
     def download_profile(self, value, crawling_id):
         ### COLETA 1.1 - PERFIL
-        self.dataHandle.set_crawling_id(crawling_id)
+        ## Set Kafka parameters
+        self.dataHandle.set_kafka_parameters(crawling_id=crawling_id, data_topic=KAFKA_TOPIC_POST)
+
+        ## Get data
         document_input_list = [value]
         filename_output = self.filename_profiles_posts
 
@@ -290,10 +298,13 @@ class Coletor():
                                        debug_message="Inicio da coleta de perfil de usuarios",
                                        document_type="profiles_posts")
 
-    def download_single_user_posts(self):
+    def download_single_user_posts(self, value, crawling_id):
         ### COLETA 1.2 - POSTS DE PERFIL
-        document_input_list = self.dataHandle.getData(filename_input=self.filename_profiles_posts,
-                                                 attributes_to_select=['nome_do_usuario'])
+        ## Set Kafka parameters
+        self.dataHandle.set_kafka_parameters(crawling_id=crawling_id, data_topic=KAFKA_TOPIC_POST)
+
+        ## Get data
+        document_input_list = [{"nome_do_usuario": value}]
         filename_output = self.filename_posts
 
         if len(document_input_list) > 0:
@@ -304,22 +315,77 @@ class Coletor():
                                            debug_message="Inicio da coleta de posts de usuario",
                                            document_type=post_type_to_download_midias_and_comments)
 
+            self.download_media(post_type_to_download_midias_and_comments=post_type_to_download_midias_and_comments, collection_type="perfil")
+            self.download_comments(post_type_to_download_midias_and_comments="posts_profile", crawling_id=crawling_id)
+            self.download_profile_comments(comment_type_to_download_profiles="comments_profile",
+                                           crawling_id=crawling_id)
+
         else:
             print("\nAtencao: Nao existem perfis armazenados para coletar posts.", flush=True)
 
-        self.download_media()
-        self.download_comments(post_type_to_download_midias_and_comments="posts_profile")
-        self.download_profile_comments(comment_type_to_download_profiles="comments_profile")
-
-        ### XXX TODO adicionar parte de download midia
 
 
-    ### XXX TODO implementar
-    def download_media(self):
-        pass
+    def download_single_word_posts(self, value, crawling_id):
+        ### COLETA 1 -POSTS DE HASHTAGS
+        ## Set Kafka parameters
+        self.dataHandle.set_kafka_parameters(crawling_id=crawling_id, data_topic=KAFKA_TOPIC_POST)
 
-    def download_comments(self, post_type_to_download_midias_and_comments):
+        ## Get data
+        document_input_list = [value]
+        filename_output = self.filename_posts
+
+        post_type_to_download_midias_and_comments = "posts_hashtag"
+
+        self.__execute_data_collection(filename_output=filename_output, dataHandle=self.dataHandle,
+                                       document_input_list=document_input_list,
+                                       debug_message="Inicio da coleta de posts com hashtag",
+                                       document_type=post_type_to_download_midias_and_comments)
+
+        self.download_media(post_type_to_download_midias_and_comments=post_type_to_download_midias_and_comments, collection_type="hashtag")
+        self.download_comments(post_type_to_download_midias_and_comments="posts_hashtag", crawling_id=crawling_id)
+        self.download_profile_comments(comment_type_to_download_profiles="comments_hashtag", crawling_id=crawling_id)
+
+
+    ### XXX TODO implementar adaptacao KAFKA (gravar pelo kafka ou local? media vai ter topico separado?)
+    def download_media(self, post_type_to_download_midias_and_comments, collection_type):
+        ### COLETA 2 - MIDIA DOS POSTS
+        '''
+        ## Set Kafka parameters
+        self.dataHandle.set_kafka_parameters(crawling_id=crawling_id, data_topic=KAFKA_TOPIC_MEDIA)
+        '''
+        ## Get data
+        filepath_output = self.filepath_medias
+        post_document_input_list = []
+
+        temp_post_document_input_list = self.dataHandle.getData(filename_input=self.filename_posts,
+                                                           attributes_to_select=['identificador', "identificador_midia",
+                                                                                 "tipo_midia", "identificador_coleta"],
+                                                           document_type=post_type_to_download_midias_and_comments)
+
+        identifiers_to_download_midia = self.users_to_download_media if collection_type == "perfil" else self.hashtags_to_download_media
+
+        ### Faz a verificacao de quais perfis ou palavras para coletar midias
+        if len(identifiers_to_download_midia) > 0:
+            for temp_document in temp_post_document_input_list:
+                if temp_document["identificador_coleta"] in identifiers_to_download_midia:
+                    post_document_input_list.append(temp_document)
+        else:
+            post_document_input_list = temp_post_document_input_list
+
+        if len(post_document_input_list) > 0:
+            self.__execute_data_collection(filename_output=filepath_output, dataHandle=self.dataHandle,
+                                           document_input_list=post_document_input_list,
+                                           debug_message="Inicio da coleta de media dos posts",
+                                           document_type="media")
+        else:
+            print("\nAtencao: Nao existem posts armazenados para coletar midia.", flush=True)
+
+    def download_comments(self, post_type_to_download_midias_and_comments, crawling_id):
         ### COLETA 3 - COMENTARIOS DOS POSTS
+        ## Set Kafka parameters
+        self.dataHandle.set_kafka_parameters(crawling_id=crawling_id, data_topic=KAFKA_TOPIC_COMMENT)
+
+        ## Get data
         document_input_list = self.dataHandle.getData(filename_input=self.filename_posts,
                                                  attributes_to_select=['identificador'],
                                                  document_type=post_type_to_download_midias_and_comments)
@@ -335,8 +401,12 @@ class Coletor():
             print("\nAtencao: Nao existem posts armazenados para coletar comentarios.", flush=True)
 
 
-    def download_profile_comments(self, comment_type_to_download_profiles):
+    def download_profile_comments(self, comment_type_to_download_profiles, crawling_id):
         ### COLETA 4 - PERFIL DOS COMENTADORES
+        ## Set Kafka parameters
+        self.dataHandle.set_kafka_parameters(crawling_id=crawling_id, data_topic=KAFKA_TOPIC_PROFILE)
+
+        ## Get data
         document_input_list = self.dataHandle.getData(filename_input=self.filename_comments,
                                                  attributes_to_select=['nome_do_usuario'],
                                                  document_type=comment_type_to_download_profiles)
@@ -349,10 +419,3 @@ class Coletor():
                                            document_type="profiles_comments")
         else:
             print("\nAtencao: Nao existem comentarios armazenados para coletar perfis de comentadores.", flush=True)
-
-
-
-
-    def download_single_word_posts(self):
-        print("download_single_word_posts")
-        pass

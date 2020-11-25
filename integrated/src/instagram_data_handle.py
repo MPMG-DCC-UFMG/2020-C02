@@ -31,15 +31,29 @@ class DataHandle:
 
         self.unified_documents_list = []
 
+        ### XXX TODO Verificar se ficara assim
+        self.data_topic = None
+        self.crawling_id = None
 
-    ### TODO Adaptar KAFKA
-    def persistData(self, filename_output, document_list, data_topic, crawling_id, operation_type=None):
+    def set_kafka_parameters(self, crawling_id, data_topic):
+        self.__set_crawling_id(crawling_id)
+        self.__set_data_topic(data_topic)
+
+    def __set_crawling_id(self,crawling_id):
+        self.crawling_id = crawling_id
+
+    def __set_data_topic(self, data_topic):
+        self.data_topic = data_topic
+
+
+    ### XXX TODO Adaptar KAFKA
+    def persistData(self, filename_output, document_list, operation_type=None):
         ### GRAVA EM ARQUIVO
         ## self.__updateDataFile(filename_output=filename_output, document_list=document_list, operation_type=operation_type)
         ### Salva em memoria e grava no KAFKA
         if "profiles_posts.json" in filename_output:
             self.profile_post_info_list.extend(document_list)
-            #### (TODO) GRAVA no KAFKA
+            #### XXX (TODO) GRAVA no KAFKA (usar o self.data_topic e self.crawling_id)
 
         elif "posts.json" in filename_output:
             self.post_info_list.extend(document_list)
@@ -48,7 +62,7 @@ class DataHandle:
         elif "comments.json" in filename_output:
             self.comment_info_list.extend(document_list)
         else:
-            ### TODO apos executar essa linha, devo alterar o status da coleta para finalizado
+            ### XXX TODO apos executar essa linha, devo alterar o status da coleta para finalizado
             self.unified_documents_list.extend(document_list)
 
 
