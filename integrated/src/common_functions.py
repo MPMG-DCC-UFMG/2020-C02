@@ -105,7 +105,7 @@ def connect_kafka_producer():
     _producer = None
 
     return _producer
-    ### XXX TODO
+    ### XXX TODO retirar esse return em ambiente producao
 
     try:
         _producer = KafkaProducer(bootstrap_servers=KAFKA_SERVERS, api_version=(0, 10))

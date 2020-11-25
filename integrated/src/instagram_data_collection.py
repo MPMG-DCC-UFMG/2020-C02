@@ -119,6 +119,8 @@ class DataCollection:
                                                         document_list=[post_document],
                                                         operation_type="a")
 
+
+
                 except Exception as e:
                     exc_type, exc_obj, exc_tb = sys.exc_info()
                     error_document = self.__getErrorDocument(exception_obj=e, exc_type=exc_type, exc_tb=exc_tb)

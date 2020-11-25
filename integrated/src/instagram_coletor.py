@@ -291,8 +291,66 @@ class Coletor():
                                        document_type="profiles_posts")
 
     def download_single_user_posts(self):
-        print("download_single_user_posts")
+        ### COLETA 1.2 - POSTS DE PERFIL
+        document_input_list = self.dataHandle.getData(filename_input=self.filename_profiles_posts,
+                                                 attributes_to_select=['nome_do_usuario'])
+        filename_output = self.filename_posts
+
+        if len(document_input_list) > 0:
+            post_type_to_download_midias_and_comments = "posts_profile"
+
+            self.__execute_data_collection(filename_output=filename_output, dataHandle=self.dataHandle,
+                                           document_input_list=document_input_list,
+                                           debug_message="Inicio da coleta de posts de usuario",
+                                           document_type=post_type_to_download_midias_and_comments)
+
+        else:
+            print("\nAtencao: Nao existem perfis armazenados para coletar posts.", flush=True)
+
+        self.download_media()
+        self.download_comments(post_type_to_download_midias_and_comments="posts_profile")
+        self.download_profile_comments(comment_type_to_download_profiles="comments_profile")
+
+        ### XXX TODO adicionar parte de download midia
+
+    ### XXX TODO implementar
+    def download_media(self):
         pass
+
+    def download_comments(self, post_type_to_download_midias_and_comments):
+        ### COLETA 3 - COMENTARIOS DOS POSTS
+        document_input_list = self.dataHandle.getData(filename_input=self.filename_posts,
+                                                 attributes_to_select=['identificador'],
+                                                 document_type=post_type_to_download_midias_and_comments)
+        filename_output = self.filename_comments
+        comment_type_to_download_profiles = "comments_profile" if post_type_to_download_midias_and_comments == "posts_profile" else "comments_hashtag"
+
+        if len(document_input_list) > 0:
+            self.__execute_data_collection(filename_output=filename_output, dataHandle=self.dataHandle,
+                                           document_input_list=document_input_list,
+                                           debug_message="Inicio da coleta de comments dos posts",
+                                           document_type=comment_type_to_download_profiles)
+        else:
+            print("\nAtencao: Nao existem posts armazenados para coletar comentarios.", flush=True)
+
+
+    def download_profile_comments(self, comment_type_to_download_profiles):
+        ### COLETA 4 - PERFIL DOS COMENTADORES
+        document_input_list = self.dataHandle.getData(filename_input=self.filename_comments,
+                                                 attributes_to_select=['nome_do_usuario'],
+                                                 document_type=comment_type_to_download_profiles)
+        filename_output = self.filename_profiles_comments
+
+        if len(document_input_list) > 0:
+            self.__execute_data_collection(filename_output=filename_output, dataHandle=self.dataHandle,
+                                           document_input_list=document_input_list,
+                                           debug_message="Inicio da coleta de perfil de comentadores",
+                                           document_type="profiles_comments")
+        else:
+            print("\nAtencao: Nao existem comentarios armazenados para coletar perfis de comentadores.", flush=True)
+
+
+
 
     def download_single_word_posts(self):
         print("download_single_word_posts")
