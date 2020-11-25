@@ -313,6 +313,7 @@ class Coletor():
 
         ### XXX TODO adicionar parte de download midia
 
+
     ### XXX TODO implementar
     def download_media(self):
         pass
