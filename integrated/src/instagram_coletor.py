@@ -122,7 +122,7 @@ class Coletor():
         ### Nao chamar esse metodo, pois gravacao e pelo kafka
         ##self.create_data_path()
 
-
+    ### @DEPRECATED Metodo obsoleto por causa da escrita no KAFKA
     def create_data_path(self):
         dataHandle = DataHandle()
 
