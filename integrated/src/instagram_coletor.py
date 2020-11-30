@@ -28,6 +28,10 @@ KAFKA_TOPIC_COMMENT = "crawler_instagram_comment"
 KAFKA_TOPIC_STATUS_OK = "crawler_status_ok"
 KAFKA_TOPIC_STATUS_ERROR = "crawler_status_error"
 
+POST_ATTRIBUTES_TO_DOWNLOAD_MEDIA = ['identificador', "identificador_midia", "tipo_midia", "identificador_coleta"]
+POST_ATTRIBUTES_TO_DOWNLOAD_COMMENTS = ['identificador']
+COMMENT_ATTRIBUTES_TO_DOWNLOAD_PROFILES = ['nome_do_usuario']
+
 class Coletor():
     """
     Recebe os parametros de entrada, gerencia os proxies e organiza a chamada das coletas.
@@ -83,9 +87,10 @@ class Coletor():
             for hashtag in input_json['palavras_a_baixar_midias']:
                 self.hashtags_to_download_media.append(str(hashtag).replace("#", ""))
 
-            dataHandle = DataHandle()
-            self.min_date = dataHandle.getDateFormatted(str(input_json['data_min']), only_date=True) if input_json['data_min'] is not None else None
-            self.max_date = dataHandle.getDateFormatted(str(input_json['data_max']), only_date=True) if input_json['data_max'] is not None else None
+            self.dataHandle = DataHandle()
+
+            self.min_date = self.dataHandle.getDateFormatted(str(input_json['data_min']), only_date=True) if input_json['data_min'] is not None else None
+            self.max_date = self.dataHandle.getDateFormatted(str(input_json['data_max']), only_date=True) if input_json['data_max'] is not None else None
 
             self.max_posts = input_json['maximo_posts'] if input_json['maximo_posts'] is not None else DEFAULT_MAX_POSTS
             self.max_comments = input_json['maximo_comentarios'] if input_json['maximo_comentarios'] is not None else DEFAULT_MAX_COMMENTS
@@ -96,8 +101,10 @@ class Coletor():
             ### XXX TODO verificar se sera assim
             self.filepath_medias = '{}'.format(self.data_path)
 
-
-            self.dataHandle = DataHandle()
+            ### Set atributos para armazenar documentos simples em memoria para recuperar no pipeline
+            self.dataHandle.set_attributes_to_get_data(post_attributes_to_download_media=POST_ATTRIBUTES_TO_DOWNLOAD_MEDIA,
+                                                       post_attributes_to_download_comments=POST_ATTRIBUTES_TO_DOWNLOAD_COMMENTS,
+                                       comment_attributes_to_download_profiles=COMMENT_ATTRIBUTES_TO_DOWNLOAD_PROFILES)
 
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -368,9 +375,8 @@ class Coletor():
         post_document_input_list = []
 
         temp_post_document_input_list = self.dataHandle.getData(filename_input=self.filename_posts,
-                                                           attributes_to_select=['identificador', "identificador_midia",
-                                                                                 "tipo_midia", "identificador_coleta"],
-                                                           document_type=post_type_to_download_midias_and_comments)
+                                                                attributes_to_select=POST_ATTRIBUTES_TO_DOWNLOAD_MEDIA,
+                                                                document_type=post_type_to_download_midias_and_comments)
 
         identifiers_to_download_midia = self.users_to_download_media if collection_type == "perfil" else self.hashtags_to_download_media
 
@@ -397,7 +403,7 @@ class Coletor():
 
         ## Get data
         document_input_list = self.dataHandle.getData(filename_input=self.filename_posts,
-                                                 attributes_to_select=['identificador'],
+                                                 attributes_to_select=POST_ATTRIBUTES_TO_DOWNLOAD_COMMENTS,
                                                  document_type=post_type_to_download_midias_and_comments)
         filename_output = self.filename_comments
         comment_type_to_download_profiles = "comments_profile" if post_type_to_download_midias_and_comments == "posts_profile" else "comments_hashtag"
@@ -418,7 +424,7 @@ class Coletor():
 
         ## Get data
         document_input_list = self.dataHandle.getData(filename_input=self.filename_comments,
-                                                 attributes_to_select=['nome_do_usuario'],
+                                                 attributes_to_select=COMMENT_ATTRIBUTES_TO_DOWNLOAD_PROFILES,
                                                  document_type=comment_type_to_download_profiles)
         filename_output = self.filename_profiles_comments
 

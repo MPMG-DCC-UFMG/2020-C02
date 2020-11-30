@@ -26,14 +26,12 @@ class DataHandle:
         Formata uma string de data e hora. Retorna data e hora ou somente a data de acordo com only_date
     """
     def __init__(self):
-        self.profile_post_info_list = []
+        #self.profile_post_info_list = []
         self.post_info_list = []
         self.comment_info_list = []
-        self.profile_comment_info_list = []
+        #self.profile_comment_info_list = []
+        #self.unified_documents_list = []
 
-        self.unified_documents_list = []
-
-        ### XXX TODO Verificar se ficara assim
         self.data_topic = None
         self.crawling_id = None
 
@@ -49,24 +47,42 @@ class DataHandle:
     def set_data_topic(self, data_topic):
         self.data_topic = data_topic
 
+    def set_attributes_to_get_data(self, post_attributes_to_download_media, post_attributes_to_download_comments,comment_attributes_to_download_profiles):
+        self.post_attributes_to_get_data = post_attributes_to_download_media.copy()
+        self.post_attributes_to_get_data.extend(post_attributes_to_download_comments)
+        self.comment_attributes_to_get_data = comment_attributes_to_download_profiles
+
+    def getSimplifiedDocumentList(self, input_document_list, attributes_to_select=None):
+        document_list = []
+
+        for document_input in input_document_list:
+            document_output = {}
+            if attributes_to_select is not None and len(attributes_to_select) > 0:
+                for attribute_name in attributes_to_select:
+                    document_output[attribute_name] = document_input[attribute_name]
+            else:
+                document_output = document_input
+
+            document_list.append(document_output)
+
+        return (document_list)
+
+
     def persistData(self, filename_output, document_list, operation_type=None):
         ### GRAVA EM ARQUIVO
         ## self.__updateDataFile(filename_output=filename_output, document_list=document_list, operation_type=operation_type)
-        ### Salva em memoria e grava no KAFKA
-        if "profiles_posts.json" in filename_output:
-            self.profile_post_info_list.extend(document_list)
-        elif "posts.json" in filename_output:
-            self.post_info_list.extend(document_list)
-        elif "profiles_comments.json" in filename_output:
-            self.profile_comment_info_list.extend(document_list)
-        elif "comments.json" in filename_output:
-            self.comment_info_list.extend(document_list)
-        else:
-            self.unified_documents_list.extend(document_list)
 
-        ### XXX TODO verificar se crawling_id sera atributo do documento ou sera atributo externo
-        json_dump_object = json.dumps({"crawling_id": self.crawling_id, "document": document_list[0]})
-        common.publish_kafka_message(self.producer, self.data_topic, 'raw', json_dump_object)
+        ### Salva dados em memoria para depois recuperar
+        ### Somente dados de POSTS e COMMENTS precisam ser salvos em memoria (outros tipos de documentos nao sao recuperados no pipeline)
+        if "posts.json" in filename_output:
+            self.post_info_list.extend(self.getSimplifiedDocumentList(input_document_list=document_list, attributes_to_select=self.post_attributes_to_get_data))
+        elif "comments.json" in filename_output:
+            self.comment_info_list.extend(self.getSimplifiedDocumentList(input_document_list=document_list, attributes_to_select=self.comment_attributes_to_get_data))
+
+        for document in document_list:
+            ### XXX TODO verificar se crawling_id sera atributo do documento ou sera atributo externo
+            json_dump_object = json.dumps({"crawling_id": self.crawling_id, "document": document})
+            common.publish_kafka_message(self.producer, self.data_topic, 'raw', json_dump_object)
 
 
     def __updateDataFile(self,filename_output, document_list, operation_type):
@@ -88,7 +104,8 @@ class DataHandle:
     def __getDataFromMemory(self, filename_input, document_type, attributes_to_select=None):
         document_list = []
 
-        input_document_list = self.profile_post_info_list if "profiles_posts.json" in filename_input else (self.post_info_list if "posts.json" in filename_input else self.comment_info_list)
+        ### Somente dados de POSTS e COMMENTS precisam ser salvos em memoria (outros tipos de documentos nao sao recuperados no pipeline)
+        input_document_list = self.post_info_list if "posts.json" in filename_input else self.comment_info_list
 
         for document_input in input_document_list:
             if document_type is None or (document_type is not None and document_input["tipo_documento"] == document_type):
