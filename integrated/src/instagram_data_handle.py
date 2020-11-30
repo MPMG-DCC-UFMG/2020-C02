@@ -40,17 +40,15 @@ class DataHandle:
         self.producer = common.connect_kafka_producer()
 
     def set_kafka_parameters(self, crawling_id, data_topic):
-        self.__set_crawling_id(crawling_id)
-        self.__set_data_topic(data_topic)
+        self.set_crawling_id(crawling_id)
+        self.set_data_topic(data_topic)
 
-    def __set_crawling_id(self,crawling_id):
+    def set_crawling_id(self,crawling_id):
         self.crawling_id = crawling_id
 
-    def __set_data_topic(self, data_topic):
+    def set_data_topic(self, data_topic):
         self.data_topic = data_topic
 
-
-    ### XXX TODO Adaptar KAFKA
     def persistData(self, filename_output, document_list, operation_type=None):
         ### GRAVA EM ARQUIVO
         ## self.__updateDataFile(filename_output=filename_output, document_list=document_list, operation_type=operation_type)

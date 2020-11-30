@@ -24,8 +24,9 @@ KAFKA_TOPIC_PROFILE = "crawler_instagram_profile"
 KAFKA_TOPIC_POST = "crawler_instagram_post"
 KAFKA_TOPIC_COMMENT = "crawler_instagram_comment"
 
-### XXX TODO verificar se vai mudar esse topico
-KAFKA_TOPIC_STATUS = "crawler_status"
+### XXX TODO verificar se vai mudar esses topicos
+KAFKA_TOPIC_STATUS_OK = "crawler_status_ok"
+KAFKA_TOPIC_STATUS_ERROR = "crawler_status_error"
 
 class Coletor():
     """
@@ -92,6 +93,9 @@ class Coletor():
             self.proxy_index = 0
             self.max_attempts = len(self.proxy_list)+1
 
+            ### XXX TODO verificar se sera assim
+            self.filepath_medias = '{}'.format(self.data_path)
+
 
             self.dataHandle = DataHandle()
 
@@ -108,14 +112,14 @@ class Coletor():
         '''
         Cria pasta de saida
         '''
-        self.create_data_path()
+        ### Nao chamar esse metodo, pois gravacao e pelo kafka
+        ##self.create_data_path()
 
 
     def create_data_path(self):
         dataHandle = DataHandle()
 
         self.current_timestamp = str(datetime.now().timestamp()).replace(".", "_")
-
 
         directory_list = ['{}{}/'.format(self.data_path , self.current_timestamp),
                                    '{}{}/{}/'.format(self.data_path , self.current_timestamp, "medias")]
@@ -129,8 +133,8 @@ class Coletor():
         self.filename_profiles_posts = '{}{}/{}'.format(self.data_path, self.current_timestamp, "profiles_posts.json")
         self.filename_profiles_comments = '{}{}/{}'.format(self.data_path, self.current_timestamp, "profiles_comments.json")
 
-        ### XXX TODO verificar se sera assim
-        self.filepath_medias ='{}{}/{}/'.format(self.data_path , self.current_timestamp, "medias")
+
+        ##self.filepath_medias ='{}{}/{}/'.format(self.data_path , self.current_timestamp, "medias")
 
         self.filename_unified_data_file = '{}{}/{}'.format(self.data_path , self.current_timestamp,str(self.current_timestamp)+".json")
 
@@ -172,6 +176,8 @@ class Coletor():
 
     def create_error_file(self, filename_output, error_document):
         try:
+            ### Se o metodo de error foi chamado crawling_id esta preechido
+            self.dataHandle.set_data_topic(data_topic=KAFKA_TOPIC_STATUS_ERROR)
             dataHandle = DataHandle()
             dataHandle.persistData(filename_output=filename_output, document_list=[error_document],
                                        operation_type="w")
@@ -292,7 +298,7 @@ class Coletor():
     def download_profile(self, value, crawling_id):
         ### COLETA 1.1 - PERFIL
         ## Set Kafka parameters
-        self.dataHandle.set_kafka_parameters(crawling_id=crawling_id, data_topic=KAFKA_TOPIC_POST)
+        self.dataHandle.set_kafka_parameters(crawling_id=crawling_id, data_topic=KAFKA_TOPIC_PROFILE)
 
         ## Get data
         document_input_list = [value]
@@ -351,7 +357,6 @@ class Coletor():
         self.download_profile_comments(comment_type_to_download_profiles="comments_hashtag", crawling_id=crawling_id)
 
 
-    ### XXX TODO implementar adaptacao KAFKA (gravar pelo kafka ou local? media vai ter topico separado?)
     def download_media(self, post_type_to_download_midias_and_comments, collection_type):
         ### COLETA 2 - MIDIA DOS POSTS
         '''
