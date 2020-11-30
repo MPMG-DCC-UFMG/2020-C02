@@ -50,6 +50,7 @@ class DataHandle:
     def set_attributes_to_get_data(self, post_attributes_to_download_media, post_attributes_to_download_comments,comment_attributes_to_download_profiles):
         self.post_attributes_to_get_data = post_attributes_to_download_media.copy()
         self.post_attributes_to_get_data.extend(post_attributes_to_download_comments)
+        self.post_attributes_to_get_data = list(set(self.post_attributes_to_get_data))
         self.comment_attributes_to_get_data = comment_attributes_to_download_profiles
 
     def getSimplifiedDocumentList(self, input_document_list, attributes_to_select=None):
