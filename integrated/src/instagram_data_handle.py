@@ -53,7 +53,7 @@ class DataHandle:
         self.post_attributes_to_get_data = list(set(self.post_attributes_to_get_data))
         self.comment_attributes_to_get_data = comment_attributes_to_download_profiles
 
-    def getSimplifiedDocumentList(self, input_document_list, attributes_to_select=None):
+    def __getSimplifiedDocumentList(self, input_document_list, attributes_to_select=None):
         document_list = []
 
         for document_input in input_document_list:
@@ -76,9 +76,9 @@ class DataHandle:
         ### Salva dados em memoria para depois recuperar
         ### Somente dados de POSTS e COMMENTS precisam ser salvos em memoria (outros tipos de documentos nao sao recuperados no pipeline)
         if "posts.json" in filename_output:
-            self.post_info_list.extend(self.getSimplifiedDocumentList(input_document_list=document_list, attributes_to_select=self.post_attributes_to_get_data))
+            self.post_info_list.extend(self.__getSimplifiedDocumentList(input_document_list=document_list, attributes_to_select=self.post_attributes_to_get_data))
         elif "comments.json" in filename_output:
-            self.comment_info_list.extend(self.getSimplifiedDocumentList(input_document_list=document_list, attributes_to_select=self.comment_attributes_to_get_data))
+            self.comment_info_list.extend(self.__getSimplifiedDocumentList(input_document_list=document_list, attributes_to_select=self.comment_attributes_to_get_data))
 
         ### Grava no KAFKA
         for document in document_list:
