@@ -3,7 +3,6 @@ import copy
 import json
 import random
 import sys
-import twitter_api
 
 
 LOGGING = True
