@@ -80,6 +80,7 @@ class DataHandle:
         elif "comments.json" in filename_output:
             self.comment_info_list.extend(self.getSimplifiedDocumentList(input_document_list=document_list, attributes_to_select=self.comment_attributes_to_get_data))
 
+        ### Grava no KAFKA
         for document in document_list:
             ### XXX TODO verificar se crawling_id sera atributo do documento ou sera atributo externo
             json_dump_object = json.dumps({"crawling_id": self.crawling_id, "document": document})
