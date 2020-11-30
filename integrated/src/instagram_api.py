@@ -11,7 +11,7 @@ from integrated.src.instagram_coletor import Coletor
 import integrated.src.local_instaloader.instaloader as localinstaloader
 
 
-def does_not_need_credential(js):
+def needs_credential(js):
     coletor = Coletor(input_json=js)
 
     collection_types = []
@@ -24,7 +24,7 @@ def does_not_need_credential(js):
     # print(coletor.user_list, "\n", coletor.hashtag_list)
     # print(collection_types)
 
-    return "hashtag" not in collection_types
+    return "hashtag" in collection_types
 
 def get_coletor_object(js):
     coletor = Coletor(input_json=js)

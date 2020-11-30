@@ -212,7 +212,7 @@ def has_available_credentials(js, net):
             if api_object is not None:
                 return True
     else:
-        if LIBS[net].does_not_need_credential(js):
+        if LIBS[net].needs_credential(js) is False:
             return True
 
         return LIBS[net].authenticate(js) is not None
