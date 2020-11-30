@@ -4,6 +4,8 @@ import sys
 import os
 from datetime import datetime
 
+import integrated.src.common_functions as common
+
 import json
 
 class DataHandle:
@@ -35,6 +37,8 @@ class DataHandle:
         self.data_topic = None
         self.crawling_id = None
 
+        self.producer = common.connect_kafka_producer()
+
     def set_kafka_parameters(self, crawling_id, data_topic):
         self.__set_crawling_id(crawling_id)
         self.__set_data_topic(data_topic)
@@ -53,8 +57,6 @@ class DataHandle:
         ### Salva em memoria e grava no KAFKA
         if "profiles_posts.json" in filename_output:
             self.profile_post_info_list.extend(document_list)
-            #### XXX (TODO) GRAVA no KAFKA (usar o self.data_topic e self.crawling_id)
-
         elif "posts.json" in filename_output:
             self.post_info_list.extend(document_list)
         elif "profiles_comments.json" in filename_output:
@@ -62,8 +64,11 @@ class DataHandle:
         elif "comments.json" in filename_output:
             self.comment_info_list.extend(document_list)
         else:
-            ### XXX TODO apos executar essa linha, devo alterar o status da coleta para finalizado
             self.unified_documents_list.extend(document_list)
+
+        ### XXX TODO verificar se crawling_id sera atributo do documento ou sera atributo externo
+        json_dump_object = json.dumps({"crawling_id": self.crawling_id, "document": document_list[0]})
+        common.publish_kafka_message(self.producer, self.data_topic, 'raw', json_dump_object)
 
 
     def __updateDataFile(self,filename_output, document_list, operation_type):

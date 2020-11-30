@@ -51,8 +51,17 @@ COPY src/common_functions.py /home/mp/machines/src/common_functions.py
 COPY src/hybrid.py /home/mp/machines/src/hybrid.py
 COPY src/producer.py /home/mp/machines/src/producer.py
 
-# Copy social networks' apis
+# Copy Twitter api
 COPY src/twitter_api.py /home/mp/machines/src/twitter_api.py
+
+# Copy Instagram api
+COPY src/instagram_api.py /home/mp/machines/src/instagram_api.py
+COPY src/instagram_coletor.py /home/mp/machines/src/instagram_coletor.py
+COPY src/instagram_data_collection.py /home/mp/machines/src/instagram_data_collection.py
+COPY src/instagram_data_handle.py /home/mp/machines/src/instagram_data_handle.py
+# Copy local Instaloader library
+RUN mkdir /home/mp/machines/src/local_instaloader
+COPY src/local_instaloader/*.py /home/mp/machines/src/local_instaloader/
 
 # Assure it worked
 # RUN pip3 freeze && find /home/mp/ -iname "*py"

@@ -20,9 +20,12 @@ DEFAULT_MAX_COMMENTS = 5000
 DEFAULT_MAX_POSTS = 5000
 
 
-KAFKA_TOPIC_PROFILE = "instagram_crawler_profile"
-KAFKA_TOPIC_POST = "instagram_crawler_post"
-KAFKA_TOPIC_COMMENT = "instagram_crawler_comment"
+KAFKA_TOPIC_PROFILE = "crawler_instagram_profile"
+KAFKA_TOPIC_POST = "crawler_instagram_post"
+KAFKA_TOPIC_COMMENT = "crawler_instagram_comment"
+
+### XXX TODO verificar se vai mudar esse topico
+KAFKA_TOPIC_STATUS = "crawler_status"
 
 class Coletor():
     """
@@ -125,6 +128,8 @@ class Coletor():
         self.filename_comments = '{}{}/{}'.format(self.data_path, self.current_timestamp, "comments.json")
         self.filename_profiles_posts = '{}{}/{}'.format(self.data_path, self.current_timestamp, "profiles_posts.json")
         self.filename_profiles_comments = '{}{}/{}'.format(self.data_path, self.current_timestamp, "profiles_comments.json")
+
+        ### XXX TODO verificar se sera assim
         self.filepath_medias ='{}{}/{}/'.format(self.data_path , self.current_timestamp, "medias")
 
         self.filename_unified_data_file = '{}{}/{}'.format(self.data_path , self.current_timestamp,str(self.current_timestamp)+".json")

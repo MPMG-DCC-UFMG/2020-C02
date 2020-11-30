@@ -13,9 +13,9 @@ KAFKA_SERVERS = [('hadoopdn-gsi-prod0' + str(j) + '.mpmg.mp.br:6667').replace('0
 KAFKA_SERVERS = KAFKA_SERVERS[:1]
 LIBS = {}
 # ROWS_INFO_ATOMIC = [ l.strip() for l in open('../data/info_atomic.csv', 'rt') if l.strip() ]
-ROWS_INFO_HIGH = [l.strip() for l in open('../data/info_high.csv', 'rt') if l.strip()]
-ROWS_INFO_HIGH2ATOMIC = [l.strip() for l in open('../data/info_high2atomic.csv', 'rt') if l.strip()]
-ROWS_INFO_TOPICS = [l.strip() for l in open('../data/info_topics.csv', 'rt') if l.strip()]
+ROWS_INFO_HIGH = [l.strip() for l in open('../data/config_high.csv', 'rt') if l.strip()]
+ROWS_INFO_HIGH2ATOMIC = [l.strip() for l in open('../data/config_high2atomic.csv', 'rt') if l.strip()]
+ROWS_INFO_TOPICS = [l.strip() for l in open('../data/config_topics.csv', 'rt') if l.strip()]
 
 
 def get_allowed_social_nets():
@@ -104,7 +104,7 @@ def connect_kafka_producer():
 
     _producer = None
 
-    return _producer
+    ##return _producer
     ### XXX TODO retirar esse return em ambiente producao
 
     try:
