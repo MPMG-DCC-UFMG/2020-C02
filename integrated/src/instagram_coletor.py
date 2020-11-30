@@ -19,18 +19,19 @@ INPUT_JSON_FOLDER = "/data/"
 DEFAULT_MAX_COMMENTS = 5000
 DEFAULT_MAX_POSTS = 5000
 
-
 KAFKA_TOPIC_PROFILE = "crawler_instagram_profile"
 KAFKA_TOPIC_POST = "crawler_instagram_post"
 KAFKA_TOPIC_COMMENT = "crawler_instagram_comment"
 
-### XXX TODO verificar se vai mudar esses topicos
+### XXX TODO verificar se esses topicos vao mudar
 KAFKA_TOPIC_STATUS_OK = "crawler_status_ok"
 KAFKA_TOPIC_STATUS_ERROR = "crawler_status_error"
 
 POST_ATTRIBUTES_TO_DOWNLOAD_MEDIA = ['identificador', "identificador_midia", "tipo_midia", "identificador_coleta"]
 POST_ATTRIBUTES_TO_DOWNLOAD_COMMENTS = ['identificador']
 COMMENT_ATTRIBUTES_TO_DOWNLOAD_PROFILES = ['nome_do_usuario']
+
+### XXX TODO Verificar se sys.exit(1) sera chamado apos error
 
 class Coletor():
     """
@@ -183,7 +184,7 @@ class Coletor():
 
     def create_error_file(self, filename_output, error_document):
         try:
-            ### Se o metodo de error foi chamado crawling_id esta preechido
+            ### Se o metodo de error foi chamado crawling_id ja esta preechido
             self.dataHandle.set_data_topic(data_topic=KAFKA_TOPIC_STATUS_ERROR)
             dataHandle = DataHandle()
             dataHandle.persistData(filename_output=filename_output, document_list=[error_document],
