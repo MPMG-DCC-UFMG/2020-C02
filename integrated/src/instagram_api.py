@@ -5,10 +5,9 @@ import os
 from datetime import datetime
 import json
 
-sys.path.append('../../')
 
-from integrated.src.instagram_coletor import Coletor
-import integrated.src.local_instaloader.instaloader as localinstaloader
+from instagram_coletor import Coletor
+import local_instaloader.instaloader as localinstaloader
 
 
 def needs_credential(js):

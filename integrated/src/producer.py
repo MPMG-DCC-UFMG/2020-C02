@@ -5,6 +5,7 @@ import random
 import sys
 
 
+LIBS = common.get_libs()
 LOGGING = True
 
 
@@ -34,12 +35,12 @@ if __name__ == '__main__':
     if common.get_error_key() not in js:
         this_social_network = common.get_social_net(js)
         if this_social_network == 'twitter':
-            js = twitter_api.translate_json_keys(js, 'pt', 'en', recursively=True)
+            js = LIBS['twitter'].translate_json_keys(js, 'pt', 'en', recursively=True)
 
         if this_social_network not in common.get_allowed_social_nets():
             feedback_js = { 'status': '%s: not prepared to deal with "%s" social network' % (common.get_error_key(), this_social_network) }
         else:
-            if not common.has_available_credentials(js, this_social_network):
+            if not common.has_available_credentials(json.loads(common.decrypt_string(json.dumps(js))), this_social_network):
                 feedback_js = { 'status': '%s: %s' % (common.get_error_key(), 'at least one valid credential must be assigned in order to continue') }
             else:
                 high_level_requests = common.get_high_level_requests(js, this_social_network)

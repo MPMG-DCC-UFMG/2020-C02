@@ -8,7 +8,7 @@ ENV LANG C.UTF-8
 RUN apt-get update -y && apt-get upgrade -y
 
 # Install essential packages
-RUN apt-get install -y wget curl zip
+RUN apt-get install -y wget curl zip vim
 
 # Install python-related packages
 RUN apt-get install -y python3
@@ -42,8 +42,10 @@ RUN tar -xvzf /home/mp/Downloads/kafka/kafka.tgz --strip 1 --directory /home/mp/
 RUN mkdir /home/mp/machines && mkdir /home/mp/machines/data && mkdir /home/mp/machines/src
 
 # Copy configuration files
+COPY data/config_group_id.csv /home/mp/machines/data/config_group_id.csv
 COPY data/config_high2atomic.csv /home/mp/machines/data/config_high2atomic.csv
 COPY data/config_high.csv /home/mp/machines/data/config_high.csv
+COPY data/config_mapping.csv /home/mp/machines/data/config_mapping.csv
 COPY data/config_topics.csv /home/mp/machines/data/config_topics.csv
 
 # Copy files to specific folders
@@ -52,6 +54,7 @@ COPY src/hybrid.py /home/mp/machines/src/hybrid.py
 COPY src/producer.py /home/mp/machines/src/producer.py
 
 # Copy Twitter api
+COPY src/send.py /home/mp/machines/src/send.py
 COPY src/twitter_api.py /home/mp/machines/src/twitter_api.py
 
 # Copy Instagram api

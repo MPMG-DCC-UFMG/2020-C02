@@ -1,3 +1,4 @@
+import common_functions as common
 import copy
 import datetime as date
 import json
@@ -9,6 +10,11 @@ import time
 
 from datetime import datetime
 from dateutil import parser
+
+
+TOPIC_KAFKA_FOLL = 'crawler_twitter_seg'
+TOPIC_KAFKA_PROFILE = 'crawler_twitter_perfil'
+TOPIC_KAFKA_POST = 'crawler_twitter_post'
 
 
 def translate_json_keys(jason, source, target, recursively=False):
@@ -38,6 +44,7 @@ def translate_word(word, source, target):
                 'access token secret': 'segredo_token_acesso',
                 'consumer key': 'chave_consumidor',
                 'consumer secret': 'segredo_consumidor',
+                'counter': 'contador',
                 'crawler': 'coletor',
                 'created_at': 'criado_em',
                 'description': 'descricao',
@@ -472,9 +479,10 @@ class shell:
                     if not is_none_string(Json['followers_limit']) else None
                 self.following_limit = copy.deepcopy(self.followers_limit)
 
-            if self.type == 'keywords':
+            if self.type == 'keywords' or self.type == 'words':
                 if 'words' in Json:
                     Json['keywords'] = copy.deepcopy(Json['words'])
+                self.type = 'keywords'
 
                 self.words = make_unique([ word for word in Json['keywords'] if word.strip() ]) \
                     if 'keywords' in Json else []
@@ -617,7 +625,7 @@ class shell:
         elif self.type == 'users':
             names = {v for _, v in self.users.items()}
 
-        for  v in names:
+        for v in names:
             new = folder + v
             if not os.path.exists(new):
                 os.makedirs(new)
@@ -678,7 +686,8 @@ class shell:
             return False
 
     
-    def __append(self, msg, name, id_post, download_media=False):
+    def __append(self, kafka_prod, msg, name, id_post, download_media=False):
+        global TOPIC_KAFKA_POST
         """
         Salva texto do post na pasta adequada. 
         """
@@ -688,8 +697,10 @@ class shell:
         name = self.output + self.timestamp + '/' + name + \
                 '/posts/' + str(id_post) + '.json'
 
-        with open(name, 'w') as f:
-            f.write(msg)
+        common.publish_kafka_message(kafka_prod, TOPIC_KAFKA_POST, self.crawling_id, msg)
+        # print(msg)
+        # with open(name, 'w') as f:
+            # f.write(msg)
 
         medias_key = 'medias' if 'medias' in json.loads(msg) else 'midias'
 
@@ -745,6 +756,8 @@ class shell:
             usuário publicou, o coletor entrou em repouso etc).
         """
         for u in self.words:
+            kafka_prod = common.connect_kafka_producer()
+
             q_search = u # if u.startswith('#') else '#' + u
             is_download_available = u in self.downloading_words
 
@@ -769,7 +782,7 @@ class shell:
 
                     max_id = status.id-1
                     text = dumps(status)
-                    self.__append(text, u, status.id, download_media=is_download_available)
+                    self.__append(kafka_prod, text, u, status.id, download_media=is_download_available)
                 except tweepy.RateLimitError:
                     self.__rate_limit(verbose)
             
@@ -795,6 +808,7 @@ class shell:
 
 
     def __profile_data(self):
+        global TOPIC_KAFKA_PROFILE
         """
         placeholder
         """
@@ -805,8 +819,9 @@ class shell:
             name = self.output + self.timestamp + '/' + \
                 self.users[u] + '/perfil.json'
 
-            with open(name, 'w') as f:
-                f.write(msg)
+            common.publish_kafka_message(common.connect_kafka_producer(), TOPIC_KAFKA_PROFILE, self.crawling_id, msg)
+            # with open(name, 'w') as f:
+                # f.write(msg)
 
 
     def __individual_follow(self, user, screen_name, kind, just_ids, is_root_user, verbose):
@@ -884,6 +899,8 @@ class shell:
 
 
     def __follow(self, kind, verbose):
+        global TOPIC_KAFKA_FOLL
+
         """
         placeholder
         """
@@ -915,16 +932,69 @@ class shell:
                     as_dictlist.append(json.dumps(jason))
                 follow_profiles = as_dictlist
 
-            if follow_profiles is None:
-                with open(name, 'wt+') as fw:
-                    fw.write('not authorized to get %s of profile id %s (%s)\n' % (kind, u, self.users[u]))
-            else:
-                with open(name, 'wt+') as fw:
-                    for inside_profile in follow_profiles:
-                        fw.write(inside_profile + '\n')
+            if follow_profiles is not None:
+            # if follow_profiles is None:
+                # with open(name, 'wt+') as fw:
+                    # fw.write('not authorized to get %s of profile id %s (%s)\n' % (kind, u, self.users[u]))
+                # with open(name, 'wt+') as fw:
+                    # for inside_profile in follow_profiles:
+                        # fw.write(inside_profile + '\n')
+
+                kafka_object = { self.users[u] + '/' + kind: follow_profiles }
+                common.publish_kafka_message(common.connect_kafka_producer(), TOPIC_KAFKA_FOLL, self.crawling_id, json.dumps(kafka_object))
+                # exit(0)
 
         return
-            
+
+
+    def __make_single_user_list(self, username):
+        uid = None
+        for key in self.users:
+            if self.users[key].lower() == username.lower():
+                uid = copy.deepcopy(key)
+                break
+
+        self.users = { uid: username } if uid is not None else {}
+
+        return
+
+
+    def download_foll(self, username, crawling_id, kind):
+        self.crawling_id = crawling_id
+        self.__make_single_user_list(username)
+        self.__folders()
+        self.__follow(kind, verbose=True)
+        return
+
+
+    def download_followers(self, username, crawling_id):
+        return self.download_foll(username, crawling_id, 'followers')
+
+
+    def download_following(self, username, crawling_id):
+        return self.download_foll(username, crawling_id, 'following')
+    
+
+    def download_profile(self, username, crawling_id):
+        self.crawling_id = crawling_id
+        self.__make_single_user_list(username)
+        self.__folders()
+        return self.__profile_data()
+
+
+    def download_single_user(self, username, crawling_id):
+        self.crawling_id = crawling_id
+        self.__make_single_user_list(username)
+        self.__folders()
+        return self.__users(verbose=True)
+
+
+    def download_single_word(self, word, crawling_id):
+        self.crawling_id = crawling_id
+        self.words = [ word ]
+        self.__folders()
+        return self.__keywords(verbose=True)
+
 
     def __users(self, verbose):
         """
@@ -938,6 +1008,7 @@ class shell:
             usuário publicou, o coletor entrou em repouso etc).
         """
         for u in self.users:
+            kafka_prod = common.connect_kafka_producer()
             is_download_available = self.users[u] in self.downloading_users
             cursor = tweepy.Cursor(
                 self.__api[self.curr].user_timeline,
@@ -965,7 +1036,7 @@ class shell:
 
                     max_id = status.id-1
                     text = dumps(status)
-                    self.__append(text, self.users[u], status.id, download_media=is_download_available)
+                    self.__append(kafka_prod, text, self.users[u], status.id, download_media=is_download_available)
 
                 except tweepy.RateLimitError:
                     self.__rate_limit(verbose)

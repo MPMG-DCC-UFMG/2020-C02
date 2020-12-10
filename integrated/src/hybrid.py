@@ -14,9 +14,20 @@ if __name__ == '__main__':
         read_from_kafka_and_run_a_single_atomic_level_request()
     '''
 
+    # for j in range(15):
+        # atomic_level_request = common.read_next_atomic_level_from_kafka()
+        # print(j, atomic_level_request)
+        # print()
+    # exit(0)
+
     if '-j' in sys.argv:
-        atomic_level_request = json.loads([ l.strip() for l in open('../data/my_atomic_instance.txt', 'rt') if l.strip() ][0])
-        common.crawl_atomic(atomic_level_request)
+        atomic_level_request = common.read_next_atomic_level_from_kafka()
+        # atomic_level_request = json.loads([ l.strip() for l in open('../data/my_atomic_instance.txt', 'rt') if l.strip() ][0])
+        # atomic_level_request = None
+        print(json.dumps(json.loads(atomic_level_request)[:-1]))
+
+        if atomic_level_request is not None:
+            common.crawl_atomic(atomic_level_request)
     else:
         while True:
             atomic_level_request = common.read_next_atomic_level_from_kafka()

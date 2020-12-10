@@ -4,7 +4,7 @@ import sys
 import os
 from datetime import datetime
 
-import integrated.src.common_functions as common
+import common_functions as common
 
 import json
 
@@ -55,12 +55,14 @@ class DataHandle:
 
     def __getSimplifiedDocumentList(self, input_document_list, attributes_to_select=None):
         document_list = []
+        #print("simplified:", input_document_list, flush=True)
 
         for document_input in input_document_list:
             document_output = {}
             if attributes_to_select is not None and len(attributes_to_select) > 0:
                 for attribute_name in attributes_to_select:
-                    document_output[attribute_name] = document_input[attribute_name]
+                    if attribute_name in document_input:
+                        document_output[attribute_name] = document_input[attribute_name]
             else:
                 document_output = document_input
 
@@ -84,7 +86,8 @@ class DataHandle:
         for document in document_list:
             ### XXX TODO verificar se crawling_id sera atributo do documento ou sera atributo externo
             json_dump_object = json.dumps({"crawling_id": self.crawling_id, "document": document})
-            common.publish_kafka_message(self.producer, self.data_topic, 'raw', json_dump_object)
+            print('>>>>>>', self.producer, self.data_topic, self.crawling_id)
+            common.publish_kafka_message(self.producer, self.data_topic, self.crawling_id, json_dump_object)
 
 
     def __updateDataFile(self,filename_output, document_list, operation_type):

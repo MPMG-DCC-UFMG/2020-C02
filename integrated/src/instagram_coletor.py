@@ -4,9 +4,9 @@ import sys
 import os
 from datetime import datetime
 
-from integrated.src.instagram_data_handle import DataHandle
-import integrated.src.local_instaloader.instaloader as localinstaloader
-from integrated.src.instagram_data_collection import DataCollection
+from instagram_data_handle import DataHandle
+import local_instaloader.instaloader as localinstaloader
+from instagram_data_collection import DataCollection
 
 import json
 
@@ -19,9 +19,9 @@ INPUT_JSON_FOLDER = "/data/"
 DEFAULT_MAX_COMMENTS = 5000
 DEFAULT_MAX_POSTS = 5000
 
-KAFKA_TOPIC_PROFILE = "crawler_instagram_profile"
+KAFKA_TOPIC_PROFILE = "crawler_instagram_perfil"
 KAFKA_TOPIC_POST = "crawler_instagram_post"
-KAFKA_TOPIC_COMMENT = "crawler_instagram_comment"
+KAFKA_TOPIC_COMMENT = "crawler_instagram_comentario"
 
 ### XXX TODO verificar se esses topicos vao mudar
 KAFKA_TOPIC_STATUS_OK = "crawler_status_ok"
@@ -121,18 +121,19 @@ class Coletor():
         Cria pasta de saida
         '''
         ### Nao chamar esse metodo, pois gravacao e pelo kafka
-        ##self.create_data_path()
+        self.create_data_path()
 
     ### @DEPRECATED Metodo obsoleto por causa da escrita no KAFKA
     def create_data_path(self):
         dataHandle = DataHandle()
 
+        ###
         self.current_timestamp = str(datetime.now().timestamp()).replace(".", "_")
 
         directory_list = ['{}{}/'.format(self.data_path , self.current_timestamp),
                                    '{}{}/{}/'.format(self.data_path , self.current_timestamp, "medias")]
 
-        dataHandle.create_directories(directories_list=directory_list)
+        ##dataHandle.create_directories(directories_list=directory_list)
 
         self.data_path_source_files = '{}{}/'.format(self.data_path , self.current_timestamp)
 
