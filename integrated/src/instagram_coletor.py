@@ -120,20 +120,13 @@ class Coletor():
         '''
         Cria pasta de saida
         '''
-        ### Nao chamar esse metodo, pois gravacao e pelo kafka
         self.create_data_path()
 
-    ### @DEPRECATED Metodo obsoleto por causa da escrita no KAFKA
     def create_data_path(self):
         dataHandle = DataHandle()
 
         ###
         self.current_timestamp = str(datetime.now().timestamp()).replace(".", "_")
-
-        directory_list = ['{}{}/'.format(self.data_path , self.current_timestamp),
-                                   '{}{}/{}/'.format(self.data_path , self.current_timestamp, "medias")]
-
-        ##dataHandle.create_directories(directories_list=directory_list)
 
         self.data_path_source_files = '{}{}/'.format(self.data_path , self.current_timestamp)
 
@@ -141,9 +134,6 @@ class Coletor():
         self.filename_comments = '{}{}/{}'.format(self.data_path, self.current_timestamp, "comments.json")
         self.filename_profiles_posts = '{}{}/{}'.format(self.data_path, self.current_timestamp, "profiles_posts.json")
         self.filename_profiles_comments = '{}{}/{}'.format(self.data_path, self.current_timestamp, "profiles_comments.json")
-
-
-        ##self.filepath_medias ='{}{}/{}/'.format(self.data_path , self.current_timestamp, "medias")
 
         self.filename_unified_data_file = '{}{}/{}'.format(self.data_path , self.current_timestamp,str(self.current_timestamp)+".json")
 
@@ -335,6 +325,12 @@ class Coletor():
                                            debug_message="Inicio da coleta de posts de usuario",
                                            document_type=post_type_to_download_midias_and_comments)
 
+            ## Define o path das midias
+            directory_list = ['{}{}/'.format(self.data_path, crawling_id),
+                              '{}{}/{}/'.format(self.data_path, crawling_id, "medias")]
+            self.dataHandle.create_directories(directories_list=directory_list)
+            self.filepath_medias ='{}{}/{}/'.format(self.data_path , crawling_id, "medias")
+
             self.download_media(post_type_to_download_midias_and_comments=post_type_to_download_midias_and_comments, collection_type="perfil")
             self.download_comments(post_type_to_download_midias_and_comments="posts_profile", crawling_id=crawling_id)
             self.download_profile_comments(comment_type_to_download_profiles="comments_profile",
@@ -360,6 +356,12 @@ class Coletor():
                                        document_input_list=document_input_list,
                                        debug_message="Inicio da coleta de posts com hashtag",
                                        document_type=post_type_to_download_midias_and_comments)
+
+        ## Define o path das midias
+        directory_list = ['{}{}/'.format(self.data_path, crawling_id),
+                          '{}{}/{}/'.format(self.data_path, crawling_id, "medias")]
+        self.dataHandle.create_directories(directories_list=directory_list)
+        self.filepath_medias = '{}{}/{}/'.format(self.data_path, crawling_id, "medias")
 
         self.download_media(post_type_to_download_midias_and_comments=post_type_to_download_midias_and_comments, collection_type="hashtag")
         self.download_comments(post_type_to_download_midias_and_comments="posts_hashtag", crawling_id=crawling_id)
