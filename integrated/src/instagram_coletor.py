@@ -315,10 +315,12 @@ class Coletor():
                                            document_type=post_type_to_download_midias_and_comments)
 
             ## Define o path das midias
-            directory_list = ['{}{}/'.format(self.data_path, crawling_id),
-                              '{}{}/{}/'.format(self.data_path, crawling_id, "medias")]
-            self.dataHandle.create_directories(directories_list=directory_list)
-            self.filepath_medias ='{}{}/{}/'.format(self.data_path , crawling_id, "medias")
+            # directory_list = ['{}{}/'.format(self.data_path, crawling_id),
+            #                   '{}{}/{}/'.format(self.data_path, crawling_id, "medias")]
+            # self.dataHandle.create_directories(directories_list=directory_list)
+            # self.filepath_medias ='{}{}/{}/'.format(self.data_path , crawling_id, "medias")
+
+            self.filepath_medias = INPUT_JSON_FOLDER
 
             self.download_media(post_type_to_download_midias_and_comments=post_type_to_download_midias_and_comments, collection_type="perfil")
             self.download_comments(post_type_to_download_midias_and_comments="posts_profile", crawling_id=crawling_id)
@@ -347,10 +349,12 @@ class Coletor():
                                        document_type=post_type_to_download_midias_and_comments)
 
         ## Define o path das midias
-        directory_list = ['{}{}/'.format(self.data_path, crawling_id),
-                          '{}{}/{}/'.format(self.data_path, crawling_id, "medias")]
-        self.dataHandle.create_directories(directories_list=directory_list)
-        self.filepath_medias = '{}{}/{}/'.format(self.data_path, crawling_id, "medias")
+        # directory_list = ['{}{}/'.format(self.data_path, crawling_id),
+        #                   '{}{}/{}/'.format(self.data_path, crawling_id, "medias")]
+        # self.dataHandle.create_directories(directories_list=directory_list)
+        # self.filepath_medias = '{}{}/{}/'.format(self.data_path, crawling_id, "medias")
+
+        self.filepath_medias = INPUT_JSON_FOLDER
 
         self.download_media(post_type_to_download_midias_and_comments=post_type_to_download_midias_and_comments, collection_type="hashtag")
         self.download_comments(post_type_to_download_midias_and_comments="posts_hashtag", crawling_id=crawling_id)
