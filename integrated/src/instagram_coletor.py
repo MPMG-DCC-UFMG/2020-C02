@@ -17,14 +17,11 @@ KAFKA_TOPIC_PROFILE = "crawler_instagram_perfil"
 KAFKA_TOPIC_POST = "crawler_instagram_post"
 KAFKA_TOPIC_COMMENT = "crawler_instagram_comentario"
 
-### XXX TODO verificar se esses topicos vao mudar
 KAFKA_TOPIC_STATUS_ERROR = "crawler_status_error"
 
 POST_ATTRIBUTES_TO_DOWNLOAD_MEDIA = ['identificador', "identificador_midia", "tipo_midia", "identificador_coleta"]
 POST_ATTRIBUTES_TO_DOWNLOAD_COMMENTS = ['identificador']
 COMMENT_ATTRIBUTES_TO_DOWNLOAD_PROFILES = ['nome_do_usuario']
-
-### XXX TODO Verificar se sys.exit(1) sera chamado apos error
 
 class Coletor():
     """
