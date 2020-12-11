@@ -91,6 +91,8 @@ class Coletor():
             self.proxy_index = 0
             self.max_attempts = len(self.proxy_list)+1
 
+            self.filepath_medias = INPUT_JSON_FOLDER
+
             ### Set atributos para armazenar documentos simples em memoria para recuperar no pipeline
             self.dataHandle.set_attributes_to_get_data(post_attributes_to_download_media=POST_ATTRIBUTES_TO_DOWNLOAD_MEDIA,
                                                        post_attributes_to_download_comments=POST_ATTRIBUTES_TO_DOWNLOAD_COMMENTS,
@@ -314,14 +316,6 @@ class Coletor():
                                            debug_message="Inicio da coleta de posts de usuario",
                                            document_type=post_type_to_download_midias_and_comments)
 
-            ## Define o path das midias
-            # directory_list = ['{}{}/'.format(self.data_path, crawling_id),
-            #                   '{}{}/{}/'.format(self.data_path, crawling_id, "medias")]
-            # self.dataHandle.create_directories(directories_list=directory_list)
-            # self.filepath_medias ='{}{}/{}/'.format(self.data_path , crawling_id, "medias")
-
-            self.filepath_medias = INPUT_JSON_FOLDER
-
             self.download_media(post_type_to_download_midias_and_comments=post_type_to_download_midias_and_comments, collection_type="perfil")
             self.download_comments(post_type_to_download_midias_and_comments="posts_profile", crawling_id=crawling_id)
             self.download_profile_comments(comment_type_to_download_profiles="comments_profile",
@@ -347,14 +341,6 @@ class Coletor():
                                        document_input_list=document_input_list,
                                        debug_message="Inicio da coleta de posts com hashtag",
                                        document_type=post_type_to_download_midias_and_comments)
-
-        ## Define o path das midias
-        # directory_list = ['{}{}/'.format(self.data_path, crawling_id),
-        #                   '{}{}/{}/'.format(self.data_path, crawling_id, "medias")]
-        # self.dataHandle.create_directories(directories_list=directory_list)
-        # self.filepath_medias = '{}{}/{}/'.format(self.data_path, crawling_id, "medias")
-
-        self.filepath_medias = INPUT_JSON_FOLDER
 
         self.download_media(post_type_to_download_midias_and_comments=post_type_to_download_midias_and_comments, collection_type="hashtag")
         self.download_comments(post_type_to_download_midias_and_comments="posts_hashtag", crawling_id=crawling_id)
