@@ -54,8 +54,10 @@ COPY src/hybrid.py /home/mp/machines/src/hybrid.py
 COPY src/producer.py /home/mp/machines/src/producer.py
 
 # Copy Twitter api
-COPY src/send.py /home/mp/machines/src/send.py
 COPY src/twitter_api.py /home/mp/machines/src/twitter_api.py
+
+# Copy YouTube api
+COPY src/youtube_api.py /home/mp/machines/src/youtube_api.py
 
 # Copy Instagram api
 COPY src/instagram_api.py /home/mp/machines/src/instagram_api.py
@@ -68,3 +70,5 @@ COPY src/local_instaloader/*.py /home/mp/machines/src/local_instaloader/
 
 # Assure it worked
 # RUN pip3 freeze && find /home/mp/ -iname "*py"
+
+WORKDIR /home/mp/machines/src/

@@ -14,6 +14,10 @@ twitter,words,posts,download_single_word
 twitter,keywords,posts,download_single_word
 twitter,palavras,posts,download_single_word
 
+youtube,id_canais_youtube,channel,download_single_channel
+youtube,id_videos_youtube,video,download_single_video
+youtube,palavras,keyword,download_single_word
+
 instagram,usuarios,perfil,download_profile
 instagram,usuarios,posts,download_single_user_posts
 instagram,palavras,posts,download_single_word_posts

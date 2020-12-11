@@ -83,7 +83,10 @@ def crawl_atomic(atomic_request):
         try:
             coletor = LIBS[net].get_coletor_object(js)
         except Exception as e:
-            coletor = LIBS[net].shell(json.dumps(js), mode)
+            try:
+                coletor = LIBS[net].YoutubeCrawlerAPI(js if type(js) == dict else json.loads(js))
+            except Exception as e:
+                coletor = LIBS[net].shell(json.dumps(js), mode)
             # coletor = LIBS[net]
 
         getattr(coletor, function_name)(value, crawling_id)
@@ -317,13 +320,14 @@ def high_to_atomic_level(high_request):
 def has_available_credentials(js, net):
     global LIBS
 
-    if 'tokens' in js:
-        for t in js['tokens']:
+    if 'tokens' in js or 'chaves_de_acesso' in js:
+        this_key = 'tokens' if 'tokens' in js else 'chaves_de_acesso'
+        for t in js[this_key]:
             api_object = None
             try:
                 api_object = LIBS[net].credentials_to_api_object(t)
-            except:
-                pass
+            except Exception as e:
+                print('cannot build api object due to: %s' % str(e))
             if api_object is not None:
                 return True
     else:
