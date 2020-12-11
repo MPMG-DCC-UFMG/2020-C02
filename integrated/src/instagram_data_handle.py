@@ -78,9 +78,11 @@ class DataHandle:
         ### Salva dados em memoria para depois recuperar
         ### Somente dados de POSTS e COMMENTS precisam ser salvos em memoria (outros tipos de documentos nao sao recuperados no pipeline)
         if "posts.json" in filename_output:
-            self.post_info_list.extend(self.__getSimplifiedDocumentList(input_document_list=document_list, attributes_to_select=self.post_attributes_to_get_data))
+            #self.post_info_list.extend(self.__getSimplifiedDocumentList(input_document_list=document_list, attributes_to_select=self.post_attributes_to_get_data))
+            self.post_info_list.extend(document_list)
         elif "comments.json" in filename_output:
-            self.comment_info_list.extend(self.__getSimplifiedDocumentList(input_document_list=document_list, attributes_to_select=self.comment_attributes_to_get_data))
+            #self.comment_info_list.extend(self.__getSimplifiedDocumentList(input_document_list=document_list, attributes_to_select=self.comment_attributes_to_get_data))
+            self.comment_info_list.extend(document_list)
 
         ### Grava no KAFKA
         for document in document_list:
@@ -113,7 +115,7 @@ class DataHandle:
         input_document_list = self.post_info_list if "posts.json" in filename_input else self.comment_info_list
 
         for document_input in input_document_list:
-            if document_type is None or (document_type is not None and document_input["tipo_documento"] == document_type):
+            if True or document_type is None or (document_type is not None and 'tipo_documento' in document_input and document_input["tipo_documento"] == document_type):
                 document_output = {}
                 if attributes_to_select is not None and len(attributes_to_select) > 0:
                     for attribute_name in attributes_to_select:
@@ -135,7 +137,7 @@ class DataHandle:
                 for document in file_input:
                     document_input = json.loads(document)
 
-                    if document_type is None or (document_type is not None and document_input["tipo_documento"] == document_type):
+                    if document_type is None or (document_type is not None and 'tipo_documento' in document_input and document_input["tipo_documento"] == document_type):
                         document_output = {}
                         if attributes_to_select is not None and len(attributes_to_select) > 0:
                             for attribute_name in attributes_to_select:

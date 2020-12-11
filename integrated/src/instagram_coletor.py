@@ -61,6 +61,8 @@ class Coletor():
     """
     def __init__(self, input_json):
         try:
+            input_json['pasta_da_saida'] = INPUT_JSON_FOLDER
+            input_json['output'] = INPUT_JSON_FOLDER
             self.data_path = INPUT_JSON_FOLDER
 
             self.instagram_user = input_json['login_usuario']
@@ -366,8 +368,8 @@ class Coletor():
         ### Faz a verificacao de quais perfis ou palavras para coletar midias
         if len(identifiers_to_download_midia) > 0:
             for temp_document in temp_post_document_input_list:
-                if temp_document["identificador_coleta"] in identifiers_to_download_midia:
-                    post_document_input_list.append(temp_document)
+                #if temp_document["identificador_coleta"] in identifiers_to_download_midia:
+                post_document_input_list.append(temp_document)
         else:
             post_document_input_list = temp_post_document_input_list
 
