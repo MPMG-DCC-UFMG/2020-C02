@@ -245,6 +245,7 @@ def read_next_atomic_level_from_kafka():
     topics = [ get_social_network_topic(net) for net in get_allowed_social_nets() ]
     random.shuffle(topics)
 
+    # topics = [ t for t in topics if 'youtu' in t.lower() ] # XXX
     # topics = [ t for t in topics if 'insta' in t.lower() ] # XXX
     print(topics)
 

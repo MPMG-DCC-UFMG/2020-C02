@@ -1,6 +1,8 @@
+import common_functions as common
 import copy
 import datetime
 import dateutil.parser
+import json
 import pytz
 import time
 import tzlocal
@@ -10,6 +12,9 @@ from googleapiclient.discovery import build as youtube_build
 from tqdm import tqdm
 
 
+TOPIC_KAFKA_YOUTUBE_COMMENT = 'crawler_youtube_comentario'
+TOPIC_KAFKA_YOUTUBE_PROFILE = 'crawler_youtube_perfil'
+TOPIC_KAFKA_YOUTUBE_VIDEO = 'crawler_youtube_post'
 memoize_channels = {}
 
 
@@ -142,6 +147,8 @@ class YoutubeCrawlerAPI():
         return result_dict
 
     def get_channel_videos(self, channel_id, min_dt=None):
+        global TOPIC_KAFKA_YOUTUBE_PROFILE
+        global TOPIC_KAFKA_YOUTUBE_VIDEO
         global memoize_channels
 
         final_response_dict = {}
@@ -154,6 +161,8 @@ class YoutubeCrawlerAPI():
             channel_key = channel_key.replace('/', ': ')
 
         if channel_id not in memoize_channels:
+            kafka_prod = common.connect_kafka_producer()
+
             # Channel information
             request = self.this_api().channels().list(
                 part='statistics',
@@ -178,6 +187,8 @@ class YoutubeCrawlerAPI():
             channel_profile['identificador'] = channel_id
             channel_profile['nome_canal'] = channel_name
             channel_profile['numero_inscritos'] = subscriber_count
+
+            common.publish_kafka_message(kafka_prod, TOPIC_KAFKA_YOUTUBE_PROFILE, self.crawling_id, json.dumps(channel_profile))
 
             # Videos information
             channels_response = self.this_api().channels().list(part='contentDetails', id=channel_id).execute()
@@ -212,6 +223,7 @@ class YoutubeCrawlerAPI():
                         video_info['identificador'] = video_id
                         video_info['titulo'] = title
                         video_info['descricao'] = description
+                        video_info['texto'] = str(title) + ' - ' + str(description)
                         video_info['data_publicacao'] = published_at
                         video_info['link_video'] = ('https://www.youtube.com/watch?v=' + video_id)
 
@@ -220,7 +232,8 @@ class YoutubeCrawlerAPI():
                         video_info['estatisticas'] = video_statistics
 
                         if min_dt is None or published_at_dt >= min_dt:
-                            videos_details[video_id] = video_info
+                            common.publish_kafka_message(kafka_prod, TOPIC_KAFKA_YOUTUBE_VIDEO, self.crawling_id, json.dumps(video_info))
+                            # videos_details[video_id] = video_info
 
                         bar.update(1)
                 
@@ -233,15 +246,20 @@ class YoutubeCrawlerAPI():
 
                 bar.close()
 
-            final_response_dict['informacao_canal'] = channel_profile
-            final_response_dict['informacao_videos'] = videos_details
+            # final_response_dict['informacao_canal'] = channel_profile
+            # final_response_dict['informacao_videos'] = videos_details
         
             memoize_channels[channel_id] = final_response_dict
 
-        return {channel_key: memoize_channels[channel_id]}
+        return
+        # return {channel_key: memoize_channels[channel_id]}
 
 
     def get_videos_by_keyword(self, keyword, max_results=50):
+        global TOPIC_KAFKA_YOUTUBE_VIDEO
+
+        kafka_prod = common.connect_kafka_producer()
+
         next_video_request = self.this_api().search().list(
             part='snippet',
             type='video',
@@ -250,7 +268,8 @@ class YoutubeCrawlerAPI():
             maxResults=max_results
         )
 
-        videos_details = {}
+        total_videos_details = 0
+        # videos_details = {}
         while next_video_request:
             next_video_request_response = next_video_request.execute()
             video_results = next_video_request_response["items"]
@@ -265,24 +284,32 @@ class YoutubeCrawlerAPI():
                 video_info['identificador'] = video_id
                 video_info['titulo'] = title
                 video_info['descricao'] = description
+                video_info['texto'] = str(title) + ' - ' + str(description)
                 video_info['data_publicacao'] = published_at
                 video_info['link_video'] = ('https://www.youtube.com/watch?v=' + video_id)
 
                 video_statistics = self.get_video_statistics(video_id)
                 video_info['estatisticas'] = video_statistics
-                videos_details[video_id] = video_info
 
-            if len(videos_details) >= max_results:
+                common.publish_kafka_message(kafka_prod, TOPIC_KAFKA_YOUTUBE_VIDEO, self.crawling_id, json.dumps(video_info))
+                total_videos_details += 1
+                # videos_details[video_id] = video_info
+
+            if total_videos_details >= max_results:
                 break
 
-            next_video_request = youtube.search().list_next(
+            next_video_request = self.this_api().search().list_next(
                 next_video_request, next_video_request_response
             )
 
-        return videos_details
+        return
+        # return videos_details
 
     def get_video_comments(self, video_id, max_comments, min_dt, max_dt):
+        global TOPIC_KAFKA_YOUTUBE_COMMENT
         # print(youtube.captions().download(id=video_id).execute())
+
+        kafka_prod = common.connect_kafka_producer()
 
         next_video_request = self.this_api().commentThreads().list(
             part='snippet',
@@ -297,7 +324,8 @@ class YoutubeCrawlerAPI():
         if(max_dt is not None):
             max_dt = (max_dt - datetime.timedelta(minutes=6)).replace(tzinfo=tzlocal.get_localzone()).astimezone(tzlocal.get_localzone())
 
-        comments = {}
+        total_comments = 0
+        # comments = {}
         oldest_published_dt = datetime.datetime.now() + datetime.timedelta(days=360)
         still_collecting = True
         while(next_video_request and still_collecting):
@@ -328,6 +356,7 @@ class YoutubeCrawlerAPI():
                 comment_info = {}
                 comment_info['id_video'] = video_id
                 comment_info['id_comentario'] = comment_id
+                comment_info['identificador'] = comment_id
                 comment_info['texto'] = text
                 comment_info['id_autor'] = author_id
                 comment_info['nome_autor'] = author_name
@@ -338,17 +367,18 @@ class YoutubeCrawlerAPI():
 
                 sat_min_date = min_dt is None or published_at_dt >= min_dt
                 sat_max_date = max_dt is None or published_at_dt < max_dt
-                sat_max_comments = max_comments is None or len(comments) < max_comments
+                sat_max_comments = max_comments is None or total_comments < max_comments
                 # print(published_at_dt, min_dt, sat_min_date)
                 if sat_min_date and sat_max_date and sat_max_comments:
-                    comments[comment_id] = comment_info
+                    common.publish_kafka_message(kafka_prod, TOPIC_KAFKA_YOUTUBE_COMMENT, self.crawling_id, json.dumps(comment_info))
+                    total_comments += 1
                     # print('>> added')
 
                 # print(published_at)
                 # time.sleep(0.25)
                 # print(comment_info)
             
-            if(max_comments is not None and len(comments) >= max_comments):
+            if(max_comments is not None and total_comments >= max_comments):
                 still_collecting = False
             elif(min_dt is not None and oldest_published_dt < min_dt):
                 still_collecting = False
@@ -357,12 +387,13 @@ class YoutubeCrawlerAPI():
                 next_video_request, next_video_request_response
             )
 
-        return comments
+        return
         
 
     def download_single_channel(self, channel_name, crawling_id):
         profile_channels = username2channels(channel_name, self)
         channels = [ channel_name ] if not profile_channels else [ ('%s/%s' % (channel_name, channel_id)) for channel_id in profile_channels ]
+        self.crawling_id = copy.deepcopy(crawling_id)
 
         for channel in channels:
             still_collecting = True
@@ -383,11 +414,8 @@ class YoutubeCrawlerAPI():
     
     def download_single_video(self, video_id, crawling_id):
         video = link_to_id(video_id)
-        print(video)
-        print(video)
-        print(video)
-        print(video)
-        print(video)
+        self.crawling_id = copy.deepcopy(crawling_id)
+        self.get_video_comments(video, self.max_comments, self.data_min, self.data_max)
         exit(0)
 
         still_collecting = True
@@ -406,6 +434,8 @@ class YoutubeCrawlerAPI():
         return
 
     def download_single_word(self, keyword, crawling_id):
+        self.crawling_id = copy.deepcopy(crawling_id)
+
         still_collecting = True
         while(still_collecting):
             try:

@@ -72,3 +72,4 @@ COPY src/local_instaloader/*.py /home/mp/machines/src/local_instaloader/
 # RUN pip3 freeze && find /home/mp/ -iname "*py"
 
 WORKDIR /home/mp/machines/src/
+# VOLUME /datalake/ufmg/twitter/ /var/twitter-crawler/

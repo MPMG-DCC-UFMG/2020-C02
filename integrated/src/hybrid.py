@@ -33,16 +33,6 @@ if __name__ == '__main__':
         while atomic_level_request is not None:
             atomic_level_request = common.read_next_atomic_level_from_kafka()
             print(atomic_level_request)
-    elif '--youtube' in sys.argv:
-        '''
-        ["youtube", "id_videos_youtube", "PcmLdV2NXww", "video", {"data_min": "2020-09-20 10:00", "pasta_da_saida": "data", "coletor": "youtube", "id_videos_youtube": ["PcmLdV2NXww"], "palavras": ["covid-19"], "id_canais_youtube": ["MinSaudeBR", "https://www.youtube.com/channel/UC12zKGLhMhDeDidoctM6BrA"], "chaves_de_acesso": [{"token_acesso": "ENCIsswxqUsEqYDNLAUqyRYUimKSetOp"}]}]
-        ["youtube", "id_canais_youtube", "https://www.youtube.com/channel/UC12zKGLhMhDeDidoctM6BrA", "channel", {"data_min": "2020-09-20 10:00", "pasta_da_saida": "data", "coletor": "youtube", "id_videos_youtube": ["PcmLdV2NXww"], "palavras": ["covid-19"], "id_canais_youtube": ["MinSaudeBR", "https://www.youtube.com/channel/UC12zKGLhMhDeDidoctM6BrA"], "chaves_de_acesso": [{"token_acesso": "ENCIsswxqUsEqYDNLAUqyRYUimKSetOp"}]}]
-        ["youtube", "palavras", "covid-19", "keyword", {"data_min": "2020-09-20 10:00", "pasta_da_saida": "data", "coletor": "youtube", "id_videos_youtube": ["PcmLdV2NXww"], "palavras": ["covid-19"], "id_canais_youtube": ["MinSaudeBR", "https://www.youtube.com/channel/UC12zKGLhMhDeDidoctM6BrA"], "chaves_de_acesso": [{"token_acesso": "ENCIsswxqUsEqYDNLAUqyRYUimKSetOp"}]}]
-        '''
-        atomic_level_request = common.decrypt_string('["youtube", "id_canais_youtube", "MinSaudeBR", "channel", {"data_min": "2020-11-20 10:00", "pasta_da_saida": "data", "coletor": "youtube", "id_videos_youtube": ["PcmLdV2NXww"], "palavras": ["covid-19"], "id_canais_youtube": ["MinSaudeBR", "https://www.youtube.com/channel/UC12zKGLhMhDeDidoctM6BrA"], "chaves_de_acesso": [{"token_acesso": "ENCIsswxqUsEqYDNLAUqyRYUimKSetOp"}]}]')
-        print(json.dumps(json.loads(atomic_level_request)[:-1]))
-        common.crawl_atomic(atomic_level_request)
-        exit(0)
     else:
         while True:
             atomic_level_request = common.read_next_atomic_level_from_kafka()

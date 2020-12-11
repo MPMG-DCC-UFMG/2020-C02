@@ -12,9 +12,9 @@ from datetime import datetime
 from dateutil import parser
 
 
-TOPIC_KAFKA_FOLL = 'crawler_twitter_seg'
-TOPIC_KAFKA_PROFILE = 'crawler_twitter_perfil'
-TOPIC_KAFKA_POST = 'crawler_twitter_post'
+TOPIC_KAFKA_TWITTER_FOLL = 'crawler_twitter_seg'
+TOPIC_KAFKA_TWITTER_PROFILE = 'crawler_twitter_perfil'
+TOPIC_KAFKA_TWITTER_POST = 'crawler_twitter_post'
 
 
 def translate_json_keys(jason, source, target, recursively=False):
@@ -463,7 +463,8 @@ class shell:
         self.followers_limit = None
         self.following_limit = None
         self.just_ids = True
-        self.outside_data_folder = Json['output']
+        self.outside_data_folder = '/datalake/ufmg/twitter/'
+        # self.outside_data_folder = Json['output']
         self.times = [date.datetime.now() - date.timedelta(minutes=15)
                 for i in range(len(self.__api))]
 
@@ -687,7 +688,7 @@ class shell:
 
     
     def __append(self, kafka_prod, msg, name, id_post, download_media=False):
-        global TOPIC_KAFKA_POST
+        global TOPIC_KAFKA_TWITTER_POST
         """
         Salva texto do post na pasta adequada. 
         """
@@ -697,7 +698,7 @@ class shell:
         name = self.output + self.timestamp + '/' + name + \
                 '/posts/' + str(id_post) + '.json'
 
-        common.publish_kafka_message(kafka_prod, TOPIC_KAFKA_POST, self.crawling_id, msg)
+        common.publish_kafka_message(kafka_prod, TOPIC_KAFKA_TWITTER_POST, self.crawling_id, msg)
         # print(msg)
         # with open(name, 'w') as f:
             # f.write(msg)
@@ -808,7 +809,7 @@ class shell:
 
 
     def __profile_data(self):
-        global TOPIC_KAFKA_PROFILE
+        global TOPIC_KAFKA_TWITTER_PROFILE
         """
         placeholder
         """
@@ -819,7 +820,7 @@ class shell:
             name = self.output + self.timestamp + '/' + \
                 self.users[u] + '/perfil.json'
 
-            common.publish_kafka_message(common.connect_kafka_producer(), TOPIC_KAFKA_PROFILE, self.crawling_id, msg)
+            common.publish_kafka_message(common.connect_kafka_producer(), TOPIC_KAFKA_TWITTER_PROFILE, self.crawling_id, msg)
             # with open(name, 'w') as f:
                 # f.write(msg)
 
@@ -899,7 +900,7 @@ class shell:
 
 
     def __follow(self, kind, verbose):
-        global TOPIC_KAFKA_FOLL
+        global TOPIC_KAFKA_TWITTER_FOLL
 
         """
         placeholder
@@ -941,7 +942,7 @@ class shell:
                         # fw.write(inside_profile + '\n')
 
                 kafka_object = { self.users[u] + '/' + kind: follow_profiles }
-                common.publish_kafka_message(common.connect_kafka_producer(), TOPIC_KAFKA_FOLL, self.crawling_id, json.dumps(kafka_object))
+                common.publish_kafka_message(common.connect_kafka_producer(), TOPIC_KAFKA_TWITTER_FOLL, self.crawling_id, json.dumps(kafka_object))
                 # exit(0)
 
         return
