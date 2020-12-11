@@ -114,8 +114,6 @@ class Coletor():
         self.create_data_path()
 
     def create_data_path(self):
-        dataHandle = DataHandle()
-
         ###
         self.current_timestamp = str(datetime.now().timestamp()).replace(".", "_")
 
