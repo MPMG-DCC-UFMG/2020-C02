@@ -10,6 +10,8 @@ from instagram_data_collection import DataCollection
 
 import json
 
+INPUT_JSON_FOLDER = "/var/instagram-crawler/"
+
 DEFAULT_MAX_COMMENTS = 5000
 DEFAULT_MAX_POSTS = 5000
 
@@ -59,7 +61,7 @@ class Coletor():
     """
     def __init__(self, input_json):
         try:
-            self.data_path = input_json['pasta_da_saida']
+            self.data_path = INPUT_JSON_FOLDER
 
             self.instagram_user = input_json['login_usuario']
             self.instagram_passwd = input_json['login_senha']
