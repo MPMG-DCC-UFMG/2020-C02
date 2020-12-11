@@ -10,12 +10,6 @@ from instagram_data_collection import DataCollection
 
 import json
 
-# TARGET_JSON_FOLDER = "/var/instagram-crawler/jsons/"
-# INPUT_JSON_FOLDER = "/var/instagram-crawler/"
-
-TARGET_JSON_FOLDER = "/data/jsons/"
-INPUT_JSON_FOLDER = "/data/"
-
 DEFAULT_MAX_COMMENTS = 5000
 DEFAULT_MAX_POSTS = 5000
 
@@ -24,7 +18,6 @@ KAFKA_TOPIC_POST = "crawler_instagram_post"
 KAFKA_TOPIC_COMMENT = "crawler_instagram_comentario"
 
 ### XXX TODO verificar se esses topicos vao mudar
-KAFKA_TOPIC_STATUS_OK = "crawler_status_ok"
 KAFKA_TOPIC_STATUS_ERROR = "crawler_status_error"
 
 POST_ATTRIBUTES_TO_DOWNLOAD_MEDIA = ['identificador', "identificador_midia", "tipo_midia", "identificador_coleta"]
@@ -69,7 +62,7 @@ class Coletor():
     """
     def __init__(self, input_json):
         try:
-            self.data_path = TARGET_JSON_FOLDER
+            self.data_path = input_json['pasta_da_saida']
 
             self.instagram_user = input_json['login_usuario']
             self.instagram_passwd = input_json['login_senha']
@@ -98,9 +91,6 @@ class Coletor():
 
             self.proxy_index = 0
             self.max_attempts = len(self.proxy_list)+1
-
-            ### XXX TODO verificar se sera assim
-            self.filepath_medias = '{}'.format(self.data_path)
 
             ### Set atributos para armazenar documentos simples em memoria para recuperar no pipeline
             self.dataHandle.set_attributes_to_get_data(post_attributes_to_download_media=POST_ATTRIBUTES_TO_DOWNLOAD_MEDIA,
