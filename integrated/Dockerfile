@@ -46,6 +46,8 @@ COPY data/config_group_id.csv /home/mp/machines/data/config_group_id.csv
 COPY data/config_high2atomic.csv /home/mp/machines/data/config_high2atomic.csv
 COPY data/config_high.csv /home/mp/machines/data/config_high.csv
 COPY data/config_mapping.csv /home/mp/machines/data/config_mapping.csv
+COPY data/config_servers.csv /home/mp/machines/data/config_servers.csv
+COPY data/config_timeouts.csv /home/mp/machines/data/config_timeouts.csv
 COPY data/config_topics.csv /home/mp/machines/data/config_topics.csv
 
 # Copy files to specific folders

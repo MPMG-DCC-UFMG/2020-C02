@@ -1,10 +1,12 @@
 import common_functions as common
 import json
+import os
 import sys
 import time
 
 
-SLEEPING_SECONDS = 8
+TIMEOUT_WAITING_CANDIDATES = [float(l.strip().split(',')[-1]) for l in open('../data/config_timeouts.csv', 'rt') if 'between_timeout' in l.lower()] if os.path.isfile('../data/config_timeouts.csv') else []
+SLEEPING_SECONDS = TIMEOUT_WAITING_CANDIDATES[0] if TIMEOUT_WAITING_CANDIDATES else 8
 
 
 if __name__ == '__main__':

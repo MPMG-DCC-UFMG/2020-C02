@@ -136,7 +136,7 @@ class DataHandle:
             with open(filename_input, "r", encoding='utf-8') as file_input:
                 for document in file_input:
                     document_input = json.loads(document)
-
+                    #print(document_input)
                     if document_type is None or (document_type is not None and 'tipo_documento' in document_input and document_input["tipo_documento"] == document_type):
                         document_output = {}
                         if attributes_to_select is not None and len(attributes_to_select) > 0:

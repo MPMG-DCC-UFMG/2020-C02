@@ -13,17 +13,20 @@ from kafka import OffsetAndMetadata
 import sys
 
 GROUP_IDS_CANDIDATES = [l.strip() for l in open('../data/config_group_id.csv', 'rt')][1:] if os.path.isfile('../data/config_group_id.csv') else []
+TIMEOUT_BATCH_CANDIDATES = [float(l.strip().split(',')[-1]) for l in open('../data/config_timeouts.csv', 'rt') if 'topic_timeout' in l.lower()] if os.path.isfile('../data/config_timeouts.csv') else []
 
 DEC = dict([tuple(l.replace('\n', '').split(',')) for l in open('../data/config_mapping.csv', 'rt') if l.strip()][1:])
 FIRST_GROUP_NAME_FROM_FILE = GROUP_IDS_CANDIDATES[0] if GROUP_IDS_CANDIDATES else None
 # MESSAGES = [str(datetime.datetime.now()), 'Hello,', 'World']
-KAFKA_SERVERS = [('hadoopdn-gsi-prod0' + str(j) + '.mpmg.mp.br:6667').replace('010', '10') for j in range(4, 10 + 1)]
-KAFKA_SERVERS = KAFKA_SERVERS[:1]
+KAFKA_SERVERS = [l.strip() for l in open('../data/config_servers.csv', 'rt')][1:] if os.path.isfile('../data/config_servers.csv') else []
+# KAFKA_SERVERS = [('hadoopdn-gsi-prod0' + str(j) + '.mpmg.mp.br:6667').replace('010', '10') for j in range(4, 10 + 1)]
+# KAFKA_SERVERS = KAFKA_SERVERS[:1]
 LIBS = {}
 # ROWS_INFO_ATOMIC = [ l.strip() for l in open('../data/info_atomic.csv', 'rt') if l.strip() ]
 ROWS_INFO_HIGH = [l.strip() for l in open('../data/config_high.csv', 'rt') if l.strip()]
 ROWS_INFO_HIGH2ATOMIC = [l.strip() for l in open('../data/config_high2atomic.csv', 'rt') if l.strip()]
 ROWS_INFO_TOPICS = [l.strip() for l in open('../data/config_topics.csv', 'rt') if l.strip()]
+TIMEOUT_BATCH = TIMEOUT_BATCH_CANDIDATES[0] * 1000 if TIMEOUT_BATCH_CANDIDATES else 64000
 
 
 def get_allowed_social_nets():
@@ -209,6 +212,8 @@ def get_social_network_topic(net):
 
 
 def read_kafka_next_row(topic, close_consumer=True):
+    global TIMEOUT_BATCH
+
     '''
     Many thanks to https://www.thebookofjoel.com/python-kafka-consumers for the reference
     '''
@@ -220,7 +225,7 @@ def read_kafka_next_row(topic, close_consumer=True):
 
     # return None
 
-    message_batch = consumer.poll(64000)
+    message_batch = consumer.poll(TIMEOUT_BATCH)
     # message_batch = consumer.poll(0 if group_exists else 64000)
     # message_batch = consumer.poll(0)
     # if not message_batch:
@@ -246,7 +251,7 @@ def read_next_atomic_level_from_kafka():
     random.shuffle(topics)
 
     # topics = [ t for t in topics if 'youtu' in t.lower() ] # XXX
-    # topics = [ t for t in topics if 'insta' in t.lower() ] # XXX
+    #topics = [ t for t in topics if 'insta' in t.lower() ] # XXX
     print(topics)
 
     for topic in topics:
