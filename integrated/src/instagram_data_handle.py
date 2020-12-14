@@ -115,15 +115,15 @@ class DataHandle:
         input_document_list = self.post_info_list if "posts.json" in filename_input else self.comment_info_list
 
         for document_input in input_document_list:
-            #if True or document_type is None or (document_type is not None and 'tipo_documento' in document_input and document_input["tipo_documento"] == document_type):
-            document_output = {}
-            if attributes_to_select is not None and len(attributes_to_select) > 0:
-                for attribute_name in attributes_to_select:
-                    document_output[attribute_name] = document_input[attribute_name]
-            else:
-                document_output = document_input
+            if document_type is None or (document_type is not None and document_input["tipo_documento"] == document_type):
+                document_output = {}
+                if attributes_to_select is not None and len(attributes_to_select) > 0:
+                    for attribute_name in attributes_to_select:
+                        document_output[attribute_name] = document_input[attribute_name]
+                else:
+                    document_output = document_input
 
-            document_list.append(document_output)
+                document_list.append(document_output)
 
         return(document_list)
 
