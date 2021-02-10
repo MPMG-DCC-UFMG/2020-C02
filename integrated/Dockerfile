@@ -1,5 +1,6 @@
 # Download base image ubuntu 16.04
-FROM ubuntu:16.04
+#FROM ubuntu:16.04
+FROM ubuntu:20.04
 
 # Set encoding
 ENV LANG C.UTF-8
@@ -20,7 +21,10 @@ RUN apt-get install -y default-jre
 # RUN python3 -c 'print(1997)'
 
 # Install pip3
+RUN apt-get update -y
+RUN apt-get install -y python3-distutils
 COPY src/get-pip.py /
+#RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 RUN python3 /get-pip.py && rm /get-pip.py
 
 # Install pip libraries
@@ -35,7 +39,8 @@ RUN mkdir /home/mp && mkdir /home/mp/Downloads && mkdir /home/mp/Downloads/kafka
 
 # Install kafka-scripts
 # COPY data/kafka.tgz /home/mp/Downloads/kafka/kafka.tgz
-RUN wget https://downloads.apache.org/kafka/2.6.0/kafka_2.12-2.6.0.tgz -O /home/mp/Downloads/kafka/kafka.tgz
+#RUN wget https://downloads.apache.org/kafka/2.6.0/kafka_2.12-2.6.0.tgz -O /home/mp/Downloads/kafka/kafka.tgz
+RUN wget https://archive.apache.org/dist/kafka/2.6.0/kafka_2.12-2.6.0.tgz -O /home/mp/Downloads/kafka/kafka.tgz
 RUN tar -xvzf /home/mp/Downloads/kafka/kafka.tgz --strip 1 --directory /home/mp/Downloads/kafka/
 
 # Create folder of integrated machine
