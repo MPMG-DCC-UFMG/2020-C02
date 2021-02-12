@@ -1,9 +1,12 @@
 # Download base image ubuntu 16.04
-#FROM ubuntu:16.04
-FROM ubuntu:20.04
+FROM ubuntu:16.04
+#FROM ubuntu:20.04
 
 # Set encoding
 ENV LANG C.UTF-8
+
+# Set compatibility
+# RUN cat /etc/apt/sources.list | sed 's/http:\/\/br.archive.ubuntu.com\//http:\/\/old-releases.ubuntu.com\//g' | sed 's/http:\/\/archive.ubuntu.com\//http:\/\/old-releases.ubuntu.com\//g' | sed 's/http:\/\/security.ubuntu.com\//http:\/\/old-releases.ubuntu.com\//g' > newfile.txt && mv newfile.txt /etc/apt/sources.list
 
 # Update Ubuntu Software repository
 RUN apt-get update -y && apt-get upgrade -y
@@ -21,8 +24,8 @@ RUN apt-get install -y default-jre
 # RUN python3 -c 'print(1997)'
 
 # Install pip3
-RUN apt-get update -y
-RUN apt-get install -y python3-distutils
+#RUN apt-get update -y
+#RUN apt-get install -y python3-distutils
 COPY src/get-pip.py /
 #RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 RUN python3 /get-pip.py && rm /get-pip.py
