@@ -204,7 +204,8 @@ class Coletor():
                 dataCollection = DataCollection(filename_output=filename_output, dataHandle=dataHandle,
                                                 instaloaderInstance=instaloaderInstance,
                                                 instaloaderClass=localinstaloader,
-                                                document_type=document_type)
+                                                document_type=document_type,
+                                                filepath_medias=self.filepath_medias)
 
                 if proxy_info is None:
                     print("\t!!!ATENCAO!!!: Esta coleta nao esta utilizando proxy.")

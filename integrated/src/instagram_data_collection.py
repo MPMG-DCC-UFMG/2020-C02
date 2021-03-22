@@ -31,12 +31,13 @@ class DataCollection:
             Coleta comentarios de um post de acordo com o limite comments_by_post
         """
     def __init__(self, filename_output, dataHandle, instaloaderInstance, instaloaderClass,
-                 document_type):
+                 document_type, filepath_medias=None):
         self.filename_output = filename_output
         self.dataHandle = dataHandle
         self.instaloaderInstance = instaloaderInstance
         self.instaloaderClass = instaloaderClass
         self.document_type = document_type
+        self.filepath_medias = filepath_medias
 
     def __getErrorDocument(self, exception_obj, exc_type, exc_tb):
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
@@ -144,6 +145,7 @@ class DataCollection:
                         "localizacao": post_object.location,
                         "tipo_midia": "imagem" if post_object.typename == "GraphImage" else ("video" if post_object.typename == "GraphVideo" else "imagem"),
                         "identificador_midia": post_object.video_url if post_object.typename == "GraphVideo" else post_object.url,
+                        "diretorio_midia": (str(self.filepath_medias)+str(post_object.shortcode)),
                         "tipo_documento": self.document_type,
                         "identificador_coleta": str(post_object.owner_username) if identificador_coleta is None else identificador_coleta
                         }
