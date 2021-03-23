@@ -61,6 +61,7 @@ class Coletor():
     """
     def __init__(self, input_json):
         try:
+            self.filepath_medias = input_json['pasta_da_saida']
             input_json['pasta_da_saida'] = INPUT_JSON_FOLDER
             input_json['output'] = INPUT_JSON_FOLDER
             self.data_path = INPUT_JSON_FOLDER
@@ -93,7 +94,7 @@ class Coletor():
             self.proxy_index = 0
             self.max_attempts = len(self.proxy_list)+1
 
-            self.filepath_medias = INPUT_JSON_FOLDER
+
 
             ### Set atributos para armazenar documentos simples em memoria para recuperar no pipeline
             self.dataHandle.set_attributes_to_get_data(post_attributes_to_download_media=POST_ATTRIBUTES_TO_DOWNLOAD_MEDIA,
