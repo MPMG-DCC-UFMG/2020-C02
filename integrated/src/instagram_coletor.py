@@ -62,7 +62,7 @@ class Coletor():
     def __init__(self, input_json):
         try:
             self.filepath_medias = input_json['pasta_da_saida']
-            input_json['pasta_da_saida'] = INPUT_JSON_FOLDER
+            #input_json['pasta_da_saida'] = INPUT_JSON_FOLDER
             input_json['output'] = INPUT_JSON_FOLDER
             self.data_path = INPUT_JSON_FOLDER
 
@@ -356,7 +356,8 @@ class Coletor():
         self.dataHandle.set_kafka_parameters(crawling_id=crawling_id, data_topic=KAFKA_TOPIC_MEDIA)
         '''
         ## Get data
-        filepath_output = self.filepath_medias
+        #filepath_output = self.filepath_medias
+        filepath_output = self.data_path
         post_document_input_list = []
 
         temp_post_document_input_list = self.dataHandle.getData(filename_input=self.filename_posts,

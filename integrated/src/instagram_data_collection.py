@@ -19,6 +19,8 @@ class DataCollection:
             Instancia da classe local da biblioteca Instaloader. Utilizada para chamar metodos de coletas do Instaloader
         collection_type: str
             Tipo da coleta para salvar nos documentos e facilitar recuperacao futura.
+        filepath_medias: str
+            Caminho do espelhamento (lado de fora)
         Metodos
         -------
         collectProfile(username: str)
