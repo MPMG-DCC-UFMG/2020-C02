@@ -1,7 +1,7 @@
 {
 	"chaves_de_acesso":
 	[   
-                {
+		{
 			"chave_consumidor": "XXX",
 			"segredo_consumidor": "XXX",
 			"token_acesso": "XXX",
@@ -10,7 +10,7 @@
 		{
 			"chave_consumidor": "XXX",
 			"segredo_consumidor": "XXX",
-			"token_acesso": "XXX"
+			"token_acesso": "XXX",
 			"segredo_token_acesso": "XXX"
 		}
 	],
