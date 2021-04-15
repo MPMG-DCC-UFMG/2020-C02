@@ -463,12 +463,17 @@ class shell:
         self.followers_limit = None
         self.following_limit = None
         self.just_ids = True
+        self.output = '/datalake/ufmg/twitter/'
         self.outside_data_folder = '/datalake/ufmg/twitter/'
         # self.outside_data_folder = Json['output']
         self.times = [date.datetime.now() - date.timedelta(minutes=15)
                 for i in range(len(self.__api))]
 
         try:
+            if 'output' in Json and Json['output'].startswith('/datalake/'):
+                self.output = copy.deepcopy(Json['output'])
+                self.outside_data_folder = copy.deepcopy(Json['output'])
+
             # self.type = Json['type']
             if 'get_follow_profiles' in Json:
                 if str(Json['get_follow_profiles']).lower().strip() in [ 'false', 'true' ]:
@@ -504,7 +509,7 @@ class shell:
 
         ### NO FUTURO A SAÍDA SERÁ VIA KAFKA
         try:
-            self.output = '/var/twitter-crawler/'
+            # self.output = '/var/twitter-crawler/'
             # self.output = Json['output']
             if self.output[-1] != '/':
                 self.output += '/'
@@ -671,22 +676,28 @@ class shell:
             path = post_path[1] + post[id_key]
 
             num = len(post[medias_key]) > 1
-            key = 1 
+            key = 1
+            new_medias = []
             for photo in post[medias_key]:
                 count = '_' + str(key) if num else ''
                 if photo[0] == 'photo':
                     filename = path + count + '.jpg' 
                 elif photo[0] == 'video':
                     filename = path + count + '.mp4' 
-        
+                photo.append(filename)
+                # photo.append(filename.replace(INSIDE_DEFAULT_PATH, OUTSIDE_DEFAULT_PATH))
+
+                if len(photo) == 3:
+                    new_medias.append(dict(zip([ 'tipo', 'url', 'caminho' ], photo)))
+
                 self.__request_media(filename, photo[1])
                 key += 1
-            return True
+            return new_medias
 
         except:
-            return False
+            return []
 
-    
+
     def __append(self, kafka_prod, msg, name, id_post, download_media=False):
         global TOPIC_KAFKA_TWITTER_POST
         """
@@ -698,18 +709,27 @@ class shell:
         name = self.output + self.timestamp + '/' + name + \
                 '/posts/' + str(id_post) + '.json'
 
-        common.publish_kafka_message(kafka_prod, TOPIC_KAFKA_TWITTER_POST, self.crawling_id, msg)
+        loaded_object = json.loads(msg)
+        medias_key = 'medias' if 'medias' in loaded_object else 'midias'
         # print(msg)
         # with open(name, 'w') as f:
             # f.write(msg)
 
-        medias_key = 'medias' if 'medias' in json.loads(msg) else 'midias'
+        # medias_key = 'medias' if 'medias' in json.loads(msg) else 'midias'
 
         # if str(id_post) != '':
             # return
 
-        if download_media and json.loads(msg)[medias_key]:
-            _ = self.__iter_media(( json.loads(msg), media_name ))
+        if download_media and loaded_object[medias_key]:
+            medias = self.__iter_media(( loaded_object, media_name )) # updates media_key with full path
+            # print(medias)
+            # _ = self.__iter_media(( json.loads(msg), media_name ))
+            loaded_object[medias_key] = medias
+            msg = json.dumps(loaded_object)
+
+        common.publish_kafka_message(kafka_prod, TOPIC_KAFKA_TWITTER_POST, self.crawling_id, msg)
+        with open(name, 'w') as f:
+            f.write(msg)
 
 
     def __next_api(self):

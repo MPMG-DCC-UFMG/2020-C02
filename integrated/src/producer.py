@@ -53,6 +53,9 @@ if __name__ == '__main__':
                     added_atomic = common.add_low_level_requests_to_kafka(atomic_requests)
                     if added_atomic:
                         feedback_js = { 'status': 'the following requests are successfully added to queue: %s' % (', '.join(added_atomic)) }
+                        for atomic_level_request in added_atomic:
+                            # print('>>>>>>', atomic_level_request, len(json.loads(atomic_level_request)))
+                            common.update_atomic_request_status(atomic_level_request, 'queued')
                     else:
                         feedback_js = { 'status': 'there is no request successfully created' }
     else:

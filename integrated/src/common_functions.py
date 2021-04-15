@@ -4,11 +4,13 @@ import json
 import os
 import random
 import subprocess
+import sys
 import time
 
 from kafka import KafkaConsumer
 from kafka import KafkaProducer
 from kafka import OffsetAndMetadata
+from termcolor import colored
 
 import sys
 
@@ -18,15 +20,60 @@ TIMEOUT_BATCH_CANDIDATES = [float(l.strip().split(',')[-1]) for l in open('../da
 DEC = dict([tuple(l.replace('\n', '').split(',')) for l in open('../data/config_mapping.csv', 'rt') if l.strip()][1:])
 FIRST_GROUP_NAME_FROM_FILE = GROUP_IDS_CANDIDATES[0] if GROUP_IDS_CANDIDATES else None
 # MESSAGES = [str(datetime.datetime.now()), 'Hello,', 'World']
-KAFKA_SERVERS = [l.strip() for l in open('../data/config_servers.csv', 'rt')][1:] if os.path.isfile('../data/config_servers.csv') else []
+KAFKA_SERVERS = [l.strip() for l in open('/data-docker-root/config_servers.csv', 'rt')][1:] if os.path.isfile('/data-docker-root/config_servers.csv') else []
 # KAFKA_SERVERS = [('hadoopdn-gsi-prod0' + str(j) + '.mpmg.mp.br:6667').replace('010', '10') for j in range(4, 10 + 1)]
 # KAFKA_SERVERS = KAFKA_SERVERS[:1]
+KAFKA_STATUS_TOPIC = 'crawler_status'
 LIBS = {}
 # ROWS_INFO_ATOMIC = [ l.strip() for l in open('../data/info_atomic.csv', 'rt') if l.strip() ]
 ROWS_INFO_HIGH = [l.strip() for l in open('../data/config_high.csv', 'rt') if l.strip()]
 ROWS_INFO_HIGH2ATOMIC = [l.strip() for l in open('../data/config_high2atomic.csv', 'rt') if l.strip()]
 ROWS_INFO_TOPICS = [l.strip() for l in open('../data/config_topics.csv', 'rt') if l.strip()]
 TIMEOUT_BATCH = TIMEOUT_BATCH_CANDIDATES[0] * 1000 if TIMEOUT_BATCH_CANDIDATES else 64000
+
+
+def magenta_string(mstr):
+    return colored(str(mstr), 'magenta')
+
+
+def green_string(mstr):
+    return colored(str(mstr), 'green')
+
+
+def yellow_string(mstr):
+    return colored(str(mstr), 'yellow')
+
+
+def red_string(mstr):
+    return colored(str(mstr), 'red')
+
+
+def update_atomic_request_status(request, new_status):
+    global KAFKA_STATUS_TOPIC
+
+    if type(request) == list or type(request) == tuple:
+        request = json.dumps(request)
+    request = list(json.loads(request))
+    request = [ request[j] for j in range(len(request)) if j != len(request)-1 ]
+
+    request = json.dumps(request)
+
+    colorfull_status = str(new_status)
+    if new_status.lower().strip() == 'queued':
+        colorfull_status = magenta_string(colorfull_status)
+    elif new_status.lower().strip() == 'running':
+        colorfull_status = yellow_string(colorfull_status)
+    elif new_status.lower().strip().startswith('finished'):
+        if 'finished: success' in new_status.lower():
+            colorfull_status = green_string(colorfull_status)
+        else:
+            colorfull_status = red_string(colorfull_status)
+
+    colorfull_string = str(request).strip() + ': ' + colorfull_status
+    # print(colorfull_string)
+    sent = publish_kafka_message(connect_kafka_producer(), KAFKA_STATUS_TOPIC, str(int(time.time() * 1000)), colorfull_string)
+
+    return
 
 
 def get_allowed_social_nets():
@@ -42,6 +89,14 @@ def get_allowed_social_nets():
                 LIBS[net] = importlib.import_module(net + '_api')
 
     return frozenset(nets)
+
+
+def update_kafka_servers():
+    global KAFKA_SERVERS
+
+    KAFKA_SERVERS = [l.strip() for l in open('/data-docker-root/config_servers.csv', 'rt')][1:] if os.path.isfile('/data-docker-root/config_servers.csv') else []
+
+    return
 
 
 def get_libs():
@@ -127,6 +182,8 @@ def publish_kafka_message(producer_instance, topic_name, key, value):
 def connect_kafka_producer():
     global KAFKA_SERVERS
 
+    update_kafka_servers()
+
     _producer = None
 
     ##return _producer
@@ -167,6 +224,8 @@ def connect_kafka_consumer(topicName):
     '''
     global FIRST_GROUP_NAME_FROM_FILE
     global KAFKA_SERVERS
+
+    update_kafka_servers()
 
     _consumer = None
 
@@ -211,7 +270,7 @@ def get_social_network_topic(net):
     return None
 
 
-def read_kafka_next_row(topic, close_consumer=True):
+def read_kafka_next_row(topic, close_consumer=True, get_key=False):
     global TIMEOUT_BATCH
 
     '''
@@ -239,28 +298,39 @@ def read_kafka_next_row(topic, close_consumer=True):
             if close_consumer:
                 consumer.close(0)
 
+            if get_key:
+                return (decrypt_string(message.key.decode('utf-8')), decrypt_string(message.value.decode('utf-8')))
             return decrypt_string(message.value.decode('utf-8')) # return iff commit
             # return message.value.decode('utf-8') # return iff commit
             # return message.key.decode('utf-8') + ': ' + decrypt_string(message.value.decode('utf-8')) # return iff commit
 
-    return None
+    return None if not get_key else (None, None)
 
 
-def read_next_atomic_level_from_kafka():
+def read_next_atomic_level_from_kafka(get_key=False):
     topics = [ get_social_network_topic(net) for net in get_allowed_social_nets() ]
     random.shuffle(topics)
 
+    if '--just-twitter' in sys.argv:
+        topics = [ t for t in topics if 'twitter' in t.lower() ] # XXX
     # topics = [ t for t in topics if 'youtu' in t.lower() ] # XXX
-    #topics = [ t for t in topics if 'insta' in t.lower() ] # XXX
+    # topics = [ t for t in topics if 'insta' in t.lower() ] # XXX
     print(topics)
 
     for topic in topics:
-        mstr = read_kafka_next_row(topic)
+        key, mstr = None, None
+
+        if get_key:
+            key, mstr = read_kafka_next_row(topic, get_key=get_key)
+        else:
+            mstr = read_kafka_next_row(topic, get_key)
+         
+        # print('mstr ==', mstr)
         # mstr = None  # read_kafka_next_row(topic)
         if mstr is not None:
-            return mstr
+            return mstr if not get_key else (key, mstr)
 
-    return None
+    return None if not get_key else (None, None)
 
 
 def add_low_level_requests_to_kafka(atomic_requests):
@@ -273,15 +343,18 @@ def add_low_level_requests_to_kafka(atomic_requests):
         if type(js) != dict:
             js = json.loads(js)
 
+        timestamp = int('%.0f' % (time.time() * 1000))
         topic = get_social_network_topic(net)
-        instance = json.dumps([net, mode, value, which, js])
-        print(instance)
+        instance = [ net, mode, value, which, js ]
+        # print(instance)
         # print(producer_instance)
         # sys.exit(0)
-        sent = publish_kafka_message(producer_instance, topic, 'atomic', instance)
+        sent = publish_kafka_message(producer_instance, topic, str(timestamp), json.dumps(instance))
         # sent = 1  # XXX publish_kafka_message(producer_instance, topic, 'atomic', instance)
         if sent:
-            added_ones.append(json.dumps([net] + json.loads(instance)[:-1]))
+            added_ones.append(json.dumps([ str(timestamp) ] + instance))
+
+        # time.sleep(10)
 
     return added_ones
 

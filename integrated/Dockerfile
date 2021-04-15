@@ -60,8 +60,8 @@ COPY data/config_topics.csv /home/mp/machines/data/config_topics.csv
 
 # Copy files to specific folders
 COPY src/common_functions.py /home/mp/machines/src/common_functions.py
-COPY src/hybrid.py /home/mp/machines/src/hybrid.py
 COPY src/producer.py /home/mp/machines/src/producer.py
+COPY src/consumer.py /home/mp/machines/src/consumer.py
 
 # Copy Twitter api
 COPY src/twitter_api.py /home/mp/machines/src/twitter_api.py
