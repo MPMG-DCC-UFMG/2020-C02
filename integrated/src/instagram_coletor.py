@@ -61,7 +61,8 @@ class Coletor():
     """
     def __init__(self, input_json):
         try:
-            input_json['pasta_da_saida'] = INPUT_JSON_FOLDER
+            self.filepath_medias = input_json['pasta_da_saida']
+            #input_json['pasta_da_saida'] = INPUT_JSON_FOLDER
             input_json['output'] = INPUT_JSON_FOLDER
             self.data_path = INPUT_JSON_FOLDER
 
@@ -93,7 +94,7 @@ class Coletor():
             self.proxy_index = 0
             self.max_attempts = len(self.proxy_list)+1
 
-            self.filepath_medias = INPUT_JSON_FOLDER
+
 
             ### Set atributos para armazenar documentos simples em memoria para recuperar no pipeline
             self.dataHandle.set_attributes_to_get_data(post_attributes_to_download_media=POST_ATTRIBUTES_TO_DOWNLOAD_MEDIA,
@@ -106,8 +107,8 @@ class Coletor():
             print('\nErro: ', e, '\tDetalhes: ', exc_type, fname, exc_tb.tb_lineno, '\tData e hora: ', datetime.now(),
                   flush=True)
 
-            print("Finalizando script...")
-            sys.exit(1)
+            #print("Finalizando script...")
+            #sys.exit(1)
 
 
         '''
@@ -150,8 +151,8 @@ class Coletor():
             print('\nErro: ', e, '\tDetalhes: ', exc_type, fname, exc_tb.tb_lineno, '\tData e hora: ', datetime.now(),
                   flush=True)
 
-            print("Finalizando script...")
-            sys.exit(1)
+            #print("Finalizando script...")
+            #sys.exit(1)
         finally:
             return proxies
 
@@ -177,8 +178,8 @@ class Coletor():
             print('\nErro: ', e, '\tDetalhes: ', exc_type, fname, exc_tb.tb_lineno, '\tData e hora: ', datetime.now(),
                   flush=True)
 
-            print("Finalizando script...")
-            sys.exit(1)
+            #print("Finalizando script...")
+            #sys.exit(1)
 
 
     def __execute_data_collection(self, filename_output, dataHandle, document_input_list, debug_message, document_type):
@@ -204,7 +205,8 @@ class Coletor():
                 dataCollection = DataCollection(filename_output=filename_output, dataHandle=dataHandle,
                                                 instaloaderInstance=instaloaderInstance,
                                                 instaloaderClass=localinstaloader,
-                                                document_type=document_type)
+                                                document_type=document_type,
+                                                filepath_medias=self.filepath_medias)
 
                 if proxy_info is None:
                     print("\t!!!ATENCAO!!!: Esta coleta nao esta utilizando proxy.")
@@ -253,8 +255,9 @@ class Coletor():
                               flush=True)
                         has_error, error_document = dataCollection.collectProfile(username=document_input['nome_do_usuario'])
                     else:
-                        print("Tipo de coleta nao identificado. Finalizando script...")
-                        sys.exit(1)
+                        print("Tipo de coleta nao identificado.")
+                        # print("Tipo de coleta nao identificado. Finalizando script...")
+                        #sys.exit(1)
 
                     if has_error is True:
                         if "429" in error_document:
@@ -275,15 +278,15 @@ class Coletor():
 
             self.create_error_file(filename_output=self.filename_unified_data_file,
                                      error_document=error_document)
-            print("Finalizando script.")
-            sys.exit(1)
+            #print("Finalizando script.")
+            #sys.exit(1)
         finally:
             if has_error is True:
                 print("{}{}".format("\nProcesso de coleta sera finalizado devido a erro. O erro: ",
                                     error_document), flush=True)
                 self.create_error_file(filename_output=self.filename_unified_data_file,
                                          error_document=error_document)
-                sys.exit(1)
+                #sys.exit(1)
 
     def download_profile(self, value, crawling_id):
         ### COLETA 1.1 - PERFIL
@@ -354,7 +357,8 @@ class Coletor():
         self.dataHandle.set_kafka_parameters(crawling_id=crawling_id, data_topic=KAFKA_TOPIC_MEDIA)
         '''
         ## Get data
-        filepath_output = self.filepath_medias
+        #filepath_output = self.filepath_medias
+        filepath_output = self.data_path
         post_document_input_list = []
 
         temp_post_document_input_list = self.dataHandle.getData(filename_input=self.filename_posts,

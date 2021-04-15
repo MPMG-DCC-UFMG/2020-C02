@@ -51,7 +51,7 @@ def authenticate(js):
 
         coletor.create_error_file(filename_output=coletor.filename_unified_data_file,
                                  error_document=error_document)
-        print("Finalizando script.")
-        sys.exit(1)
+        #print("Finalizando script.")
+        #sys.exit(1)
 
     return instaloaderInstance

@@ -86,7 +86,7 @@ class DataHandle:
 
         ### Grava no KAFKA
         for document in document_list:
-            ### XXX TODO verificar se crawling_id sera atributo do documento ou sera atributo externo
+            ### XXX Verificar se crawling_id sera atributo do documento ou sera atributo externo
             json_dump_object = json.dumps({"crawling_id": self.crawling_id, "document": document})
             print('>>>>>>', self.producer, self.data_topic, self.crawling_id)
             common.publish_kafka_message(self.producer, self.data_topic, self.crawling_id, json_dump_object)

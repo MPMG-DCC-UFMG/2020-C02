@@ -10,6 +10,6 @@
   "data_max": "10-08-2020",
   "maximo_posts": 5,
   "maximo_comentarios": 5,
-  "pasta_da_saida": "data",
+  "pasta_da_saida": "/datalake/ufmg/instagram/",
   "coletor": "instagram"
 }
