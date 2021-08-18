@@ -1,0 +1,16 @@
+{
+    "chaves_de_acesso": [
+        {
+            "token_acesso": "XXX"
+        },
+        {
+            "token_acesso": "XXX"
+        }
+    ],
+    "id_canais_youtube": [ "MinSaudeBR", "https://www.youtube.com/channel/UC12zKGLhMhDeDidoctM6BrA" ],
+    "id_videos_youtube": [ "PcmLdV2NXww" ],
+    "palavras": [ "covid-19" ],
+    "data_min": "2020-09-20 10:00",
+    "pasta_da_saida": "data",
+    "coletor": "youtube"
+}

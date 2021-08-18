@@ -1,0 +1,34 @@
+{
+	"chaves_de_acesso":
+	[ 
+{
+			"chave_consumidor": "XXXXXXXXXXXXXXXXXXXX",
+			"segredo_consumidor":"XXXXXXXXXXXXXXXXXXXX",
+			"token_acesso": "XXXXXXXXXXXXXXXXXXXX",
+			"segredo_token_acesso": "XXXXXXXXXXXXXXXXXXXX"
+
+
+        }
+	],
+
+	"usuarios": ["CarlaZambelli38", "randolfeap"],
+	"palavras": ["vote para prefeito","vote no candidato","vote para deputado","vote em quem","conto com o seu voto","ter o seu voto","vote em candidatos","quero ser o seu vereador",
+"vote para prefeita","vote para deputada","vote em mim ","juntos nessa caminhada","vote nos candidatos","no dia vote","quero ser seu candidato","quero ser o seu prefeito",
+"quero ser o seu deputado","contamos com o seu voto","quero ser a sua vereadora","contra a velha política","conto com o seu apoio","quero ser o seu presidente","vote em candidatas"
+,"quero ser sua candidata","vote na candidata","vote nas candidatas","vote na senadora","não vote nele ","não vote nela","quero ser a sua prefeita","quero ser a sua deputada","vote em candidato","vote em candidata","vote em mulher ","trabalhador vota em trabalhador","seu eu for eleito","gostaria de pedir seu voto","votar em mim","votar em candidatos","votar em candidato","votar em candidatas","votar em candidata","votar nos candidatos","votar no candidato","votar nas candidatas","votar na candidata","posso contar com o seu voto"],
+    "recuperar_perfis_de_seguidores": true,
+	"pasta_da_saida": "data",
+	"limite_de_seguidores": "1000",
+	"coletor": "twitter",
+	"data_min": "2020-01-01"
+}
+
+
+
+
+
+
+
+
+
+

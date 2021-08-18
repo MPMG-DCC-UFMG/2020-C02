@@ -1,0 +1,15 @@
+{
+  "lista_de_proxies": ["usuario:senha@endereco_proxy:porta"],
+  "login_usuario": "usuario",
+  "login_senha": "senha",
+  "usuarios": ["anvisaoficial"],
+  "usuarios_a_baixar_midias": ["anvisaoficial"],
+  "palavras": ["pandemia"],
+  "palavras_a_baixar_midias": ["pandemia"],
+  "data_min": "01-08-2020",
+  "data_max": "10-08-2020",
+  "maximo_posts": 5,
+  "maximo_comentarios": 5,
+  "pasta_da_saida": "/datalake/ufmg/instagram/",
+  "coletor": "instagram"
+}
