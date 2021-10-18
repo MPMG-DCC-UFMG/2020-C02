@@ -2,6 +2,7 @@ certifi==2020.6.20
 chardet==3.0.4
 idna==2.10
 google-api-python-client==1.12.1
+google-auth==1.25.0
 kafka-python==2.0.2
 oauthlib==3.1.0
 PySocks==1.7.1
