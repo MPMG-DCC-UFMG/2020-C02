@@ -1,8 +1,9 @@
 # Download base image ubuntu 16.04
-FROM ubuntu:16.04
+FROM ubuntu:20.04
 
 # Set encoding
 ENV LANG C.UTF-8
+ENV DEBIAN_FRONTEND=noninteractive 
 
 # Update Ubuntu Software repository
 RUN apt-get update -y && apt-get upgrade -y
@@ -13,14 +14,8 @@ RUN apt-get install -y wget curl zip
 # Install kafka-needed java library
 RUN apt-get install -y default-jre
 
-
 # Install python-related packages and PIP3.
-RUN  apt install software-properties-common -y && \
- add-apt-repository ppa:deadsnakes/ppa -y && apt-get update -y && apt-get install python3.8-venv -y
-
-# Make python 3.8 default version
-RUN python3.8 -m venv /venv
-ENV PATH=/venv/bin:$PATH
+RUN apt-get install python3-pip -y
 
 # Install pip libraries
 COPY requirements.txt /
