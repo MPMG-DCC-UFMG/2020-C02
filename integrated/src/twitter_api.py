@@ -48,7 +48,7 @@ def translate_word(word, source, target):
                 'access token': 'token_acesso',
                 'access token secret': 'segredo_token_acesso',
                 'author' : 'usuario_do_autor',
-                'author_id' : 'id_do_autor',
+                'author_id': 'id_do_autor',
                 'consumer key': 'chave_consumidor',
                 'consumer secret': 'segredo_consumidor',
                 'crawler': 'coletor',
@@ -79,6 +79,7 @@ def translate_word(word, source, target):
                 'name': 'nome',
                 'output': 'pasta_da_saida',
                 'profile': 'perfil',
+                'profile_image_url': 'url_imagem_perfil_usuario',
                 'protected': 'protegido',
                 'quote_count': 'quant_citacoes',
                 'replied_to': 'id_do_tweet_respondido',
@@ -93,8 +94,12 @@ def translate_word(word, source, target):
                 'tweet_count': 'qtde_de_tweets_realizados',
                 'type': 'tipo_de_interacao',
                 'user': 'usuario',
+                'url': 'url',
                 'users': 'usuarios',
+                'user_created_at' : 'data_de_criacao_do_usuario',
+                'user_location': 'localizacao_do_usuario',
                 'users_to_download_media': 'usuarios_a_baixar_midias',
+                'verified': 'verificado',
                 'words': 'palavras',
                 'words_to_download_media': 'palavras_a_baixar_midias',
             }
@@ -372,7 +377,8 @@ def dumps(sts):
     status['in_reply_to_status_id'] = None
     status['in_reply_to_user_id'] = None
     
-    
+    status = get_user_parameters(status, sts['author_id_hydrate'])
+
     status['medias'] = []
 
 
@@ -460,6 +466,31 @@ def credentials_to_api_object(token):
         api_object = None
     
     return api_object
+
+def get_user_parameters(status, parameters):
+    
+    status['author_id'] = parameters['id']
+    
+    status['screen_name'] = parameters['username']
+    
+    status['name'] = parameters['name']
+    
+    status['user_created_at'] = str(parameters['created_at'])
+    
+    status['user_location'] = parameters['location'] \
+        if 'location' in parameters else ""
+    
+    status['description'] = parameters['description']
+        
+    status['verified'] = parameters['verified']
+    
+    status['profile_image_url'] = parameters['profile_image_url']  \
+    if 'profile_image_url' in parameters else ""
+    
+    status['url'] = parameters['url'] \
+    if 'url' in parameters else ""
+    
+    return status
 
 
 class shell:
@@ -551,7 +582,7 @@ class shell:
         self.__expansions = 'attachments.media_keys,referenced_tweets.id.author_id,geo.place_id'
         self.__tweet_fields = 'attachments,author_id,created_at,entities,geo,id,in_reply_to_user_id,public_metrics,text,referenced_tweets'
         self.__media_fields = 'url,type'
-        self.__user_fields = 'created_at,protected,location,description,public_metrics'
+        self.__user_fields = 'created_at,verified,id,url,profile_image_url,protected,location,description,public_metrics'
         self.__place_fields = 'full_name'
         
         self.__t_max_results = 100
@@ -936,7 +967,6 @@ class shell:
         """
     
         for u in self.words:
-            kafka_prod = common.connect_kafka_producer()
             q_search = u 
             is_download_available = u in self.downloading_words
 
@@ -948,6 +978,7 @@ class shell:
                 'expansions': self.__expansions,
                 'media.fields': self.__media_fields,
                 'place.fields': self.__place_fields,
+                'user.fields': self.__user_fields,
                 'max_results': self.__t_max_results,
                 'start_time': self.min,
                 'end_time': self.max
@@ -963,11 +994,12 @@ class shell:
                     status = c.__next__() 
 
                     if verbose:
-                        print(f"Tweet de {u}: criado em {status['created_at']} ")
+                        dt = status['created_at']
+                        print(dt + " tweet de {}".format(u))
 
                     max_id = int(status['id'])-1
                     text = dumps(status)
-                    self.__append(kafka_prod, text, u, status['id'], download_media=is_download_available)
+                    self.__append(text, u, status['id'], download_media=is_download_available)
                 
                 except TwitterRequestError as e:
                     
@@ -980,6 +1012,7 @@ class shell:
                         if max_id != -1:
                             max_id_str = str(max_id)
 
+
                         cursor = TwitterPager(self.__api[self.curr], 'tweets/search/recent', 
                         {
                             'query': q_search,
@@ -987,6 +1020,7 @@ class shell:
                             'expansions': self.__expansions,
                             'media.fields': self.__media_fields,
                             'place.fields': self.__place_fields,
+                            'user.fields': self.__user_fields,
                             'max_results': self.__t_max_results,
                             'start_time': self.min,
                             'end_time': self.max,
@@ -996,15 +1030,17 @@ class shell:
                         
                         c = cursor.get_iterator()
                         continue
-
                     else:
-                        raise Exception('Erro no processo de troca de chaves.')
+                        print(f'Erro {e}')
+                        break
 
                 except StopIteration:
                     break
 
                 except Exception as e:
-                    raise Exception(f"Erro na coleta de {u}: {e}")
+                    print(str(e))
+                    print("Erro na coleta de ", u)
+                    break 
 
 
     def __profile_data(self, verbose=True):
@@ -1203,7 +1239,7 @@ class shell:
 
 
 
-    def __users(self, verbose):
+   def __users(self, verbose):
         """
         Coleta posts dos perfis selcionados no período definido e
         salva em arquivos próprios dentro do diretório definido em output.
@@ -1216,13 +1252,13 @@ class shell:
             usuário publicou, o coletor entrou em repouso etc).
         """
         for u in self.users:
-            kafka_prod = common.connect_kafka_producer()
             is_download_available = self.users[u] in self.downloading_users
             cursor = TwitterPager(self.__api[self.curr], f'users/:{u}/tweets', 
             {
                 'tweet.fields': self.__tweet_fields,
                 'expansions': self.__expansions,
                 'media.fields': self.__media_fields,
+                'user.fields': self.__user_fields,
                 'place.fields': self.__place_fields,
                 'max_results': self.__t_max_results,
                 'start_time': self.min,
@@ -1239,11 +1275,12 @@ class shell:
                     status = c.__next__() 
                     
                     if verbose:
-                        print(f"Tweet de {self.users[u]}: criado em {status['created_at']} ")
+                        dt = status['created_at']
+                        print(dt + " tweet de @{}".format(self.users[u]))
 
                     max_id = int(status['id'])-1
                     text = dumps(status)
-                    self.__append(kafka_prod, text, self.users[u], status['id'], download_media=is_download_available)
+                    self.__append(text, self.users[u], status['id'], download_media=is_download_available)
                 
                 except TwitterRequestError as e:
                     
@@ -1255,12 +1292,12 @@ class shell:
                         if max_id != -1:
                             max_id_str = str(max_id)
 
-                
                         cursor = TwitterPager(self.__api[self.curr], f'users/:{u}/tweets', 
                         {
                             'tweet.fields': self.__tweet_fields,
                             'expansions': self.__expansions,
                             'media.fields': self.__media_fields,
+                            'user.fields': self.__user_fields,
                             'place.fields': self.__place_fields,
                             'max_results': self.__t_max_results,
                             'start_time': self.min,
@@ -1272,11 +1309,12 @@ class shell:
                         c = cursor.get_iterator()
                         continue
                     else:
-                        raise Exception(f'Erro: {e}')
+                        print(f'Erro: {e}')
+                        break
                     
-
                 except StopIteration:
                     break
 
                 except Exception as e:
-                    raise Exception("Erro na coleta de %s: %s" % (self.users[u], str(e)))
+                    print("Erro na coleta de %s: %s" % (self.users[u], str(e)))
+                    break 

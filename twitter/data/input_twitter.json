@@ -2,10 +2,18 @@
 	"chaves_de_acesso":
 	[ 
 {
-			"chave_consumidor": "XXXXXXXXXXXXXXXXXXXX",
-			"segredo_consumidor":"XXXXXXXXXXXXXXXXXXXX",
-			"token_acesso": "XXXXXXXXXXXXXXXXXXXX",
-			"segredo_token_acesso": "XXXXXXXXXXXXXXXXXXXX"
+			"chave_consumidor": "w4zpxlx3Bjdn03bl4dXl07yF7",
+			"segredo_consumidor":"O1oumqmNWOBlfJp3FBV3W14bRTZEzpD9waaCWhqPjYFPSb9N8W",
+			"token_acesso": "1393301211869220867-9Ou0XVzVfOOQuVuIu2ydRrF27WiGtC",
+			"segredo_token_acesso": "jajHyBfCfTEQSm3jHnh2pC3IBqCB27WTPs2c94x8cNGlY"
+
+
+        },
+        {
+			"chave_consumidor": "CdIuhleMyXJVMDZzG23dv6ILt",
+			"segredo_consumidor":"Nh9QowejEN0gBprT4Tua69dX3YFDFyMNXmpcV3rSqOQua8UNGD",
+			"token_acesso": "3377920695-805ZjTnbxv75zM9pd7AIw5ychN0nw1YWLrJYUDi",
+			"segredo_token_acesso": "VKvLlVePLLu9X2nmLKxoNZS4bpSL7CwSIkDmIAmQJh1if"
 
 
         }

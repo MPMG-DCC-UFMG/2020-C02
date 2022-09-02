@@ -42,6 +42,7 @@ def translate_word(word, source, target):
                 'access token': 'token_acesso',
                 'access token secret': 'segredo_token_acesso',
                 'author' : 'usuario_do_autor',
+                'author_id': 'id_do_autor',
                 'consumer key': 'chave_consumidor',
                 'consumer secret': 'segredo_consumidor',
                 'crawler': 'coletor',
@@ -72,6 +73,7 @@ def translate_word(word, source, target):
                 'name': 'nome',
                 'output': 'pasta_da_saida',
                 'profile': 'perfil',
+                'profile_image_url': 'url_imagem_perfil_usuario',
                 'protected': 'protegido',
                 'quote_count': 'quant_citacoes',
                 'replied_to': 'id_do_tweet_respondido',
@@ -86,8 +88,12 @@ def translate_word(word, source, target):
                 'tweet_count': 'qtde_de_tweets_realizados',
                 'type': 'tipo_de_interacao',
                 'user': 'usuario',
+                'url': 'url',
                 'users': 'usuarios',
+                'user_created_at' : 'data_de_criacao_do_usuario',
+                'user_location': 'localizacao_do_usuario',
                 'users_to_download_media': 'usuarios_a_baixar_midias',
+                'verified': 'verificado',
                 'words': 'palavras',
                 'words_to_download_media': 'palavras_a_baixar_midias',
             }
@@ -329,7 +335,30 @@ def is_valid_date(value,var_type):
         print("Data fornecida está em um formato inválido. Confira a entrada.")
         return False
 
-
+def get_user_parameters(status, parameters):
+    
+    status['author_id'] = parameters['id']
+    
+    status['screen_name'] = parameters['username']
+    
+    status['name'] = parameters['name']
+    
+    status['user_created_at'] = str(parameters['created_at'])
+    
+    status['user_location'] = parameters['location'] \
+        if 'location' in parameters else ""
+    
+    status['description'] = parameters['description']
+        
+    status['verified'] = parameters['verified']
+    
+    status['profile_image_url'] = parameters['profile_image_url']  \
+    if 'profile_image_url' in parameters else ""
+    
+    status['url'] = parameters['url'] \
+    if 'url' in parameters else ""
+    
+    return status
 
 def dumps(sts):
     """
@@ -357,14 +386,14 @@ def dumps(sts):
     status['favorite_count'] = sts['public_metrics']['like_count']
     status['location'] = sts['geo']['place_id_hydrate']['full_name'] \
         if 'geo' in sts and 'full_name' in sts['geo']['place_id_hydrate'] else None
-    # status['type'] = None
-    # status['interactor_user_id'] = None
-    # status['interaction_id'] = None
     status['retweet_id'] = None
     status['retweeted_user_id'] = None
     status['in_reply_to_status_id'] = None
     status['in_reply_to_user_id'] = None
     
+    
+    status = get_user_parameters(status, sts['author_id_hydrate'])
+
     
     status['medias'] = []
 
@@ -389,9 +418,6 @@ def dumps(sts):
 
             status['retweet_id'] = id_tweet_interacao
                     
-        # elif tweet_interaction == 'quoted':
-        #     status['type'] = "Citação"
-
         elif tweet_interaction == 'replied_to':
             status['in_reply_to_status_id'] = id_tweet_interacao
             status['in_reply_to_user_id'] = sts['in_reply_to_user_id'] \
@@ -434,11 +460,7 @@ def dumps_perfil(usr):
     perfil['followers_count'] = usr['public_metrics']['followers_count']
     perfil['friends_count'] = usr['public_metrics']['following_count']
     perfil['favourites_count'] = None
-    #Listed_count != favourites_count
-    #perfil['favourites_count'] = usr['public_metrics']['listed_count']
-    #perfil['tweet_count'] = usr['public_metrics']['tweet_count']
     return json.dumps(translate_json_keys(perfil, 'en', 'pt'), ensure_ascii=False)
-
 
 class shell:
     """
@@ -535,7 +557,7 @@ class shell:
         self.__expansions = 'attachments.media_keys,referenced_tweets.id.author_id,geo.place_id'
         self.__tweet_fields = 'attachments,author_id,created_at,entities,geo,id,in_reply_to_user_id,public_metrics,text,referenced_tweets'
         self.__media_fields = 'url,type'
-        self.__user_fields = 'created_at,protected,location,description,public_metrics'
+        self.__user_fields = 'created_at,verified,id,url,profile_image_url,protected,location,description,public_metrics'
         self.__place_fields = 'full_name'
         
         self.__t_max_results = 100
@@ -918,6 +940,7 @@ class shell:
                 'expansions': self.__expansions,
                 'media.fields': self.__media_fields,
                 'place.fields': self.__place_fields,
+                'user.fields': self.__user_fields,
                 'max_results': self.__t_max_results,
                 'start_time': self.min,
                 'end_time': self.max
@@ -959,6 +982,7 @@ class shell:
                             'expansions': self.__expansions,
                             'media.fields': self.__media_fields,
                             'place.fields': self.__place_fields,
+                            'user.fields': self.__user_fields,
                             'max_results': self.__t_max_results,
                             'start_time': self.min,
                             'end_time': self.max,
@@ -1124,6 +1148,7 @@ class shell:
                     
             fw.close()
 
+
     def __users(self, verbose):
         """
         Coleta posts dos perfis selcionados no período definido e
@@ -1143,6 +1168,7 @@ class shell:
                 'tweet.fields': self.__tweet_fields,
                 'expansions': self.__expansions,
                 'media.fields': self.__media_fields,
+                'user.fields': self.__user_fields,
                 'place.fields': self.__place_fields,
                 'max_results': self.__t_max_results,
                 'start_time': self.min,
@@ -1181,6 +1207,7 @@ class shell:
                             'tweet.fields': self.__tweet_fields,
                             'expansions': self.__expansions,
                             'media.fields': self.__media_fields,
+                            'user.fields': self.__user_fields,
                             'place.fields': self.__place_fields,
                             'max_results': self.__t_max_results,
                             'start_time': self.min,
