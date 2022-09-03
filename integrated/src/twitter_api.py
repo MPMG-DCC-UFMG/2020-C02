@@ -45,7 +45,7 @@ def translate_word(word, source, target):
         'pt': { 'en': {} },
         'en': {
             'pt': {
-                'access token': 'token_acesso',
+            'access token': 'token_acesso',
                 'access token secret': 'segredo_token_acesso',
                 'author' : 'usuario_do_autor',
                 'author_id': 'id_do_autor',
@@ -102,7 +102,7 @@ def translate_word(word, source, target):
                 'verified': 'verificado',
                 'words': 'palavras',
                 'words_to_download_media': 'palavras_a_baixar_midias',
-            }
+}
         }
     }
     for w in translation['en']['pt']:
@@ -340,7 +340,30 @@ def is_valid_date(value,var_type, comp_type):
     except Exception:
         raise Exception(f'Data informada no campo {comp_type} é inválida para {var_type}.')
 
-
+def get_user_parameters(status, parameters):
+    
+    status['author_id'] = parameters['id']
+    
+    status['screen_name'] = parameters['username']
+    
+    status['name'] = parameters['name']
+    
+    status['user_created_at'] = str(parameters['created_at'])
+    
+    status['user_location'] = parameters['location'] \
+        if 'location' in parameters else ""
+    
+    status['description'] = parameters['description']
+        
+    status['verified'] = parameters['verified']
+    
+    status['profile_image_url'] = parameters['profile_image_url']  \
+    if 'profile_image_url' in parameters else ""
+    
+    status['url'] = parameters['url'] \
+    if 'url' in parameters else ""
+    
+    return status
 
 def dumps(sts):
     """
@@ -376,9 +399,10 @@ def dumps(sts):
     status['retweeted_user_id'] = None
     status['in_reply_to_status_id'] = None
     status['in_reply_to_user_id'] = None
-    
-    status = get_user_parameters(status, sts['author_id_hydrate'])
 
+    status = get_user_parameters(status, sts['author_id_hydrate'])
+ 
+    
     status['medias'] = []
 
 
@@ -466,31 +490,6 @@ def credentials_to_api_object(token):
         api_object = None
     
     return api_object
-
-def get_user_parameters(status, parameters):
-    
-    status['author_id'] = parameters['id']
-    
-    status['screen_name'] = parameters['username']
-    
-    status['name'] = parameters['name']
-    
-    status['user_created_at'] = str(parameters['created_at'])
-    
-    status['user_location'] = parameters['location'] \
-        if 'location' in parameters else ""
-    
-    status['description'] = parameters['description']
-        
-    status['verified'] = parameters['verified']
-    
-    status['profile_image_url'] = parameters['profile_image_url']  \
-    if 'profile_image_url' in parameters else ""
-    
-    status['url'] = parameters['url'] \
-    if 'url' in parameters else ""
-    
-    return status
 
 
 class shell:
@@ -583,6 +582,7 @@ class shell:
         self.__tweet_fields = 'attachments,author_id,created_at,entities,geo,id,in_reply_to_user_id,public_metrics,text,referenced_tweets'
         self.__media_fields = 'url,type'
         self.__user_fields = 'created_at,verified,id,url,profile_image_url,protected,location,description,public_metrics'
+
         self.__place_fields = 'full_name'
         
         self.__t_max_results = 100
@@ -662,9 +662,9 @@ class shell:
                             self.users[var['data']['id']] = usuario
                     
                     except KeyError as e:
-                        print("Usuário não encontrado.")
+                        print("Usuário não encontrado")
                         continue
-                    
+
                     except TwitterRequestError as e:
                         
                         if e.status_code == self.__error_code:
@@ -680,8 +680,8 @@ class shell:
                         else:
                             raise Exception('Erro na validação de usuários')
 
-                    except Exception as e:
-                        print("Usuário não encontrado.")
+                    except KeyError as e:
+                        print("Usuário não encontrado")
                         continue
                
             else:
@@ -814,6 +814,7 @@ class shell:
         """
         ### POR ENQUANTO ESCREVE EM ARQUIVO. NO FUTURO, NÃO
         ### PRECISAREMOS DE PASTAS COMO ESTAS
+        names = {}
         self.timestamp = str(int(time.time()*1000))
         folder = self.output + self.timestamp + '/'
         if not os.path.exists(folder):
@@ -823,6 +824,9 @@ class shell:
             names = self.words
         elif self.type == 'users' and self.users:
             names = {v for _, v in self.users.items()}
+
+        if len(names) == 0:
+            raise Exception('User or Keywords not found to create directories.')
 
         for  v in names:
             new = folder + v
@@ -968,6 +972,7 @@ class shell:
         """
     
         for u in self.words:
+            kafka_prod = common.connect_kafka_producer()
             q_search = u 
             is_download_available = u in self.downloading_words
 
@@ -978,8 +983,8 @@ class shell:
                 'tweet.fields': self.__tweet_fields,
                 'expansions': self.__expansions,
                 'media.fields': self.__media_fields,
-                'place.fields': self.__place_fields,
                 'user.fields': self.__user_fields,
+                'place.fields': self.__place_fields,
                 'max_results': self.__t_max_results,
                 'start_time': self.min,
                 'end_time': self.max
@@ -995,12 +1000,11 @@ class shell:
                     status = c.__next__() 
 
                     if verbose:
-                        dt = status['created_at']
-                        print(dt + " tweet de {}".format(u))
+                        print(f"Tweet de {u}: criado em {status['created_at']} ")
 
                     max_id = int(status['id'])-1
                     text = dumps(status)
-                    self.__append(text, u, status['id'], download_media=is_download_available)
+                    self.__append(kafka_prod, text, u, status['id'], download_media=is_download_available)
                 
                 except TwitterRequestError as e:
                     
@@ -1013,15 +1017,14 @@ class shell:
                         if max_id != -1:
                             max_id_str = str(max_id)
 
-
                         cursor = TwitterPager(self.__api[self.curr], 'tweets/search/recent', 
                         {
                             'query': q_search,
                             'tweet.fields': self.__tweet_fields,
                             'expansions': self.__expansions,
+                            'user.fields': self.__user_fields,
                             'media.fields': self.__media_fields,
                             'place.fields': self.__place_fields,
-                            'user.fields': self.__user_fields,
                             'max_results': self.__t_max_results,
                             'start_time': self.min,
                             'end_time': self.max,
@@ -1031,17 +1034,15 @@ class shell:
                         
                         c = cursor.get_iterator()
                         continue
+
                     else:
-                        print(f'Erro {e}')
-                        break
+                        raise Exception('Erro no processo de troca de chaves.')
 
                 except StopIteration:
                     break
 
                 except Exception as e:
-                    print(str(e))
-                    print("Erro na coleta de ", u)
-                    break 
+                    raise Exception(f"Erro na coleta de {u}: {e}")
 
 
     def __profile_data(self, verbose=True):
@@ -1253,14 +1254,15 @@ class shell:
             usuário publicou, o coletor entrou em repouso etc).
         """
         for u in self.users:
+            kafka_prod = common.connect_kafka_producer()
             is_download_available = self.users[u] in self.downloading_users
             cursor = TwitterPager(self.__api[self.curr], f'users/:{u}/tweets', 
             {
                 'tweet.fields': self.__tweet_fields,
                 'expansions': self.__expansions,
                 'media.fields': self.__media_fields,
-                'user.fields': self.__user_fields,
                 'place.fields': self.__place_fields,
+                'user.fields': self.__user_fields,
                 'max_results': self.__t_max_results,
                 'start_time': self.min,
                 'end_time': self.max
@@ -1276,12 +1278,11 @@ class shell:
                     status = c.__next__() 
                     
                     if verbose:
-                        dt = status['created_at']
-                        print(dt + " tweet de @{}".format(self.users[u]))
+                        print(f"Tweet de {self.users[u]}: criado em {status['created_at']} ")
 
                     max_id = int(status['id'])-1
                     text = dumps(status)
-                    self.__append(text, self.users[u], status['id'], download_media=is_download_available)
+                    self.__append(kafka_prod, text, self.users[u], status['id'], download_media=is_download_available)
                 
                 except TwitterRequestError as e:
                     
@@ -1293,14 +1294,15 @@ class shell:
                         if max_id != -1:
                             max_id_str = str(max_id)
 
+                
                         cursor = TwitterPager(self.__api[self.curr], f'users/:{u}/tweets', 
                         {
                             'tweet.fields': self.__tweet_fields,
                             'expansions': self.__expansions,
                             'media.fields': self.__media_fields,
-                            'user.fields': self.__user_fields,
                             'place.fields': self.__place_fields,
                             'max_results': self.__t_max_results,
+                            'user.fields': self.__user_fields,
                             'start_time': self.min,
                             'end_time': self.max,
                             'until_id': max_id_str
@@ -1310,12 +1312,11 @@ class shell:
                         c = cursor.get_iterator()
                         continue
                     else:
-                        print(f'Erro: {e}')
-                        break
+                        raise Exception(f'Erro: {e}')
                     
+
                 except StopIteration:
                     break
 
                 except Exception as e:
-                    print("Erro na coleta de %s: %s" % (self.users[u], str(e)))
-                    break 
+                    raise Exception("Erro na coleta de %s: %s" % (self.users[u], str(e)))
