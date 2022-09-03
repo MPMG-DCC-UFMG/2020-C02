@@ -662,7 +662,8 @@ class shell:
                             self.users[var['data']['id']] = usuario
                     
                     except KeyError as e:
-                        raise Exception(f"Usuario '{usuario}' não encontrado ou banido.")
+                        print("Usuário não encontrado.")
+                        continue
                     
                     except TwitterRequestError as e:
                         
@@ -680,8 +681,8 @@ class shell:
                             raise Exception('Erro na validação de usuários')
 
                     except Exception as e:
-                        raise Exception(f"Usuario '{usuario}' não encontrado ou banido.")
-                    ###########
+                        print("Usuário não encontrado.")
+                        continue
                
             else:
                 raise Exception("Erro de tipo de coleta.")
@@ -1239,7 +1240,7 @@ class shell:
 
 
 
-   def __users(self, verbose):
+    def __users(self, verbose):
         """
         Coleta posts dos perfis selcionados no período definido e
         salva em arquivos próprios dentro do diretório definido em output.
