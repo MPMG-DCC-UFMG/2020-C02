@@ -637,7 +637,7 @@ class shell:
 
             elif self.type == 'users':
                 
-                self.users_list = make_unique(Json['users']) if 'users' in Json else []
+                all_users = make_unique(Json['users']) if 'users' in Json else []
                 
                 self.min = parser.parse(Json['min_date']).isoformat('T')[:]+'Z' \
                     if 'min_date' in Json and not is_none_string(Json['min_date']) \
@@ -647,7 +647,7 @@ class shell:
                     if 'max_date' in Json and not is_none_string(Json['max_date']) \
                     and is_valid_date(Json['max_date'], "users", 'max_date') else None
 
-                self.users = {}
+                self.users, self.list_of_unavailable_users = self.__get_user_id(all_users)
             
                
             else:
@@ -736,9 +736,10 @@ class shell:
                         
         return Json
 
-    def __get_user_id(self):
+    def __get_user_id(self, all_users):
         dictorio = {}
-        for usuario in self.users_list:   
+        list_of_unavailable_users = []
+        for usuario in all_users:   
             try:
                 var = self.__api[self.curr].request(f'users/by/username/:{usuario}').json()
 
@@ -746,7 +747,8 @@ class shell:
                     dictorio[var['data']['id']] = usuario
             
             except KeyError as e:
-                raise KeyError("Usuário não encontrado")
+                list_of_unavailable_users.append(usuario)
+                continue
                 
 
             except TwitterRequestError as e:
@@ -765,9 +767,10 @@ class shell:
                     raise Exception('Erro na validação de usuários')
 
             except KeyError as e:
-                raise KeyError("Usuário não encontrado")
+                list_of_unavailable_users.append(usuario)
+                continue
         
-        return dictorio
+        return dictorio, list_of_unavailable_users
 
 
     def start(self, verbose=True):
@@ -811,9 +814,7 @@ class shell:
         """
         Cria as pastas de organização da coleta
         """
-        ### POR ENQUANTO ESCREVE EM ARQUIVO. NO FUTURO, NÃO
-        ### PRECISAREMOS DE PASTAS COMO ESTAS
-        names = {}
+
         self.timestamp = str(int(time.time()*1000))
         folder = self.output + self.timestamp + '/'
         if not os.path.exists(folder):
@@ -1190,6 +1191,13 @@ class shell:
             common.publish_kafka_message(common.connect_kafka_producer(), TOPIC_KAFKA_TWITTER_FOLL, \
             self.crawling_id, json.dumps(kafka_object).replace("\\\"", '"'))
 
+    def __test_user(self, username):
+        if username in self.list_of_unavailable_users:
+            raise Exception("Usuário banido ou não encontrado.")
+        
+        return True
+
+
     def __make_single_user_list(self, username):
         uid = None
         for key in self.users:
@@ -1204,6 +1212,7 @@ class shell:
 
     def download_foll(self, username, crawling_id, kind):
         self.crawling_id = crawling_id
+        self.__test_user(username)
         self.__make_single_user_list(username)
         self.__folders()
         self.__follow(kind, verbose=True)
@@ -1211,15 +1220,19 @@ class shell:
 
 
     def download_followers(self, username, crawling_id):
+        self.__test_user(username)
         return self.download_foll(username, crawling_id, 'followers')
 
 
     def download_following(self, username, crawling_id):
+        self.__test_user(username)
         return self.download_foll(username, crawling_id, 'following')
     
 
     def download_profile(self, username, crawling_id):
         self.crawling_id = crawling_id
+        self.__test_user(username)
+
         self.__make_single_user_list(username)
         self.__folders()
         return self.__profile_data(verbose=True)
@@ -1227,6 +1240,8 @@ class shell:
 
     def download_single_user(self, username, crawling_id):
         self.crawling_id = crawling_id
+        self.__test_user(username)
+
         self.__make_single_user_list(username)
         self.__folders()
         return self.__users(verbose=True)
