@@ -637,7 +637,7 @@ class shell:
 
             elif self.type == 'users':
                 
-                users = make_unique(Json['users']) if 'users' in Json else []
+                self.users_list = make_unique(Json['users']) if 'users' in Json else []
                 
                 self.min = parser.parse(Json['min_date']).isoformat('T')[:]+'Z' \
                     if 'min_date' in Json and not is_none_string(Json['min_date']) \
@@ -649,40 +649,6 @@ class shell:
 
                 self.users = {}
             
-                # Para cada usuário, testa se é possível realizar a captura, e cria o dicionário user:id.
-                # Seguinte trecho deveria estar em um método.
-                # Posto aqui para evitar grandes modificações na estrutura elaborada pelo autor original do código.
-                ###########
-                for usuario in users:
-                    
-                    try:
-                        var = self.__api[self.curr].request(f'users/by/username/:{usuario}').json()
-
-                        if 'id' in var['data']:
-                            self.users[var['data']['id']] = usuario
-                    
-                    except KeyError as e:
-                        print("Usuário não encontrado")
-                        continue
-
-                    except TwitterRequestError as e:
-                        
-                        if e.status_code == self.__error_code:
-                            if e.msg != self.__error_message:
-                                self.__treat_ratelimit_exception(e.status_code, e.msg)
-                                
-                            self.__rate_limit(verbose=False)
-
-                            var = self.__api[self.curr].request(f'users/by/username/:{usuario}').json()
-                            
-                            if 'id' in var['data']:
-                                self.users[var['data']['id']] = usuario
-                        else:
-                            raise Exception('Erro na validação de usuários')
-
-                    except KeyError as e:
-                        print("Usuário não encontrado")
-                        continue
                
             else:
                 raise Exception("Erro de tipo de coleta.")
@@ -770,6 +736,39 @@ class shell:
                         
         return Json
 
+    def __get_user_id(self):
+        dictorio = {}
+        for usuario in self.users_list:   
+            try:
+                var = self.__api[self.curr].request(f'users/by/username/:{usuario}').json()
+
+                if 'id' in var['data']:
+                    dictorio[var['data']['id']] = usuario
+            
+            except KeyError as e:
+                raise KeyError("Usuário não encontrado")
+                
+
+            except TwitterRequestError as e:
+                
+                if e.status_code == self.__error_code:
+                    if e.msg != self.__error_message:
+                        self.__treat_ratelimit_exception(e.status_code, e.msg)
+                        
+                    self.__rate_limit(verbose=False)
+
+                    var = self.__api[self.curr].request(f'users/by/username/:{usuario}').json()
+                    
+                    if 'id' in var['data']:
+                        dictorio[var['data']['id']] = usuario
+                else:
+                    raise Exception('Erro na validação de usuários')
+
+            except KeyError as e:
+                raise KeyError("Usuário não encontrado")
+        
+        return dictorio
+
 
     def start(self, verbose=True):
         """
@@ -792,7 +791,9 @@ class shell:
 
             return self.timestamp
 
-        elif self.type == 'users' and self.users:
+        
+        if self.type == 'users' and len(self.users_list) != 0:
+            self.users = self.__get_user_id()
             self.__folders()
             self.__profile_data(verbose=True)
             
@@ -804,8 +805,6 @@ class shell:
             self.__users(verbose) 
 
             return self.timestamp
-
-        return 0
 
 
     def __folders(self):
